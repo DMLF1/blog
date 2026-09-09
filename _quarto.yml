@@ -1,0 +1,42 @@
+project:
+  type: website
+  # _freeze/ holds cached execution output for posts with code chunks;
+  # it must survive `quarto render` cleans and be committed to the repo.
+  render:
+    - "*.qmd"
+    - "posts/**/*.qmd"
+
+website:
+  title: "ML/Viz Notes"
+  description: "A technical blog about machine learning and data visualization."
+  site-url: https://dmlf1.github.io/blog/
+  search: true
+  page-navigation: true
+  navbar:
+    left:
+      - href: index.qmd
+        text: Home
+      - href: about.qmd
+        text: About
+    right:
+      - icon: rss
+        href: index.xml
+      - icon: github
+        href: https://github.com/DMLF1/blog
+
+format:
+  html:
+    theme:
+      light: cosmo
+      dark: darkly
+    css: styles.css
+    code-copy: true
+    code-tools: false
+    highlight-style: github
+    html-math-method: mathjax
+    lightbox: true
+    link-external-icon: false
+    link-external-newwindow: true
+
+execute:
+  freeze: auto

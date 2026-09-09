@@ -1,0 +1,5 @@
+# Shared defaults for everything under posts/. Per-post front matter can
+# override any of these.
+toc: true
+code-fold: false
+number-sections: false

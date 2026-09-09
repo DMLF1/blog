@@ -1,0 +1,25 @@
+/* Custom overrides. Keep this file small — prefer Quarto/Bootstrap built-ins
+   over new CSS. Every rule below exists to satisfy a specific requirement. */
+
+/* Cap figure height so a tall/portrait diagram can't dominate the viewport.
+   width: auto lets the image shrink proportionally instead of distorting. */
+.quarto-figure img {
+  max-height: 70vh;
+  width: auto;
+}
+
+/* Dark-mode fix for draw.io diagrams: draw.io exports transparent
+   backgrounds with dark strokes/text, which vanish on a dark theme. Force a
+   light backing plate behind every diagram SVG instead of using a CSS
+   color filter — a filter (e.g. invert()) risks mangling diagrams that use
+   deliberate color coding, whereas a plain white plate is content-agnostic
+   and matches how these diagrams look embedded in any document. Scoped by
+   filename suffix so photos/plots aren't affected. `body.quarto-dark` is
+   the class Quarto's built-in light/dark toggle actually applies (verified
+   against rendered output — it is not a `data-bs-theme` attribute). See
+   README.md "Dark mode and diagrams" for the full writeup. */
+body.quarto-dark img[src$=".drawio.svg"] {
+  background-color: #ffffff;
+  border-radius: 4px;
+  padding: 0.5rem;
+}

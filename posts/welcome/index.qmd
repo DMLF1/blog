@@ -1,0 +1,26 @@
+---
+title: "Welcome"
+subtitle: "Baseline post: plain Markdown, no code, no diagrams."
+date: 2026-01-05
+categories: [meta]
+---
+
+This is the baseline sample post. It exists only to exercise the plainest
+path through the build — no executed code, no diagrams, just Markdown.
+
+## Why this blog exists
+
+Placeholder prose. This paragraph, and the rest of this post, will be
+replaced with real writing later — it's here only so the listing page,
+theme, and RSS feed have at least one lightweight entry to render.
+
+## What to expect
+
+Two more sample posts sit alongside this one:
+
+- **attention-visualized** — diagrams, sizing options, and math.
+- **calibration-curves** — executed Python code producing a static and an
+  interactive plot.
+
+Between the three of them, the whole pipeline — Markdown, diagrams, code
+execution, and deployment — gets a dry run before any real content goes in.

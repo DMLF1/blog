@@ -1,0 +1,12 @@
+---
+title: "ML/Viz Notes"
+listing:
+  contents: posts
+  type: default
+  sort: "date desc"
+  categories: true
+  feed: true
+  fields: [image, date, title, subtitle, reading-time, categories]
+page-layout: full
+title-block-banner: false
+---

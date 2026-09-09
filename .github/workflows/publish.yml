@@ -1,0 +1,47 @@
+name: Publish
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch: {}
+
+# Only one publish at a time; let a newer push cancel an in-flight one.
+concurrency:
+  group: publish
+  cancel-in-progress: true
+
+jobs:
+  build-and-publish:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+        with:
+          # _freeze/ diffs and any future git-based post metadata need history.
+          fetch-depth: 0
+
+      - name: Set up Quarto
+        uses: quarto-dev/quarto-actions/setup@v2
+
+      - name: Set up uv
+        uses: astral-sh/setup-uv@v3
+        with:
+          enable-cache: true
+
+      - name: Install Python environment
+        run: uv sync --frozen
+
+      - name: Render site
+        run: uv run quarto render
+        # A non-zero exit here (any render error) stops the job before the
+        # publish step below runs, so a broken build never reaches Pages.
+
+      - name: Publish to GitHub Pages
+        uses: quarto-dev/quarto-actions/publish@v2
+        with:
+          target: gh-pages
+          render: false # already rendered above; don't render twice
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}

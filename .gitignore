@@ -1,0 +1,18 @@
+# Quarto
+/.quarto/
+/_site/
+
+# Python / uv
+/.venv/
+__pycache__/
+*.pyc
+
+# NOTE: _freeze/ is intentionally NOT ignored — it's committed so CI can
+# skip re-executing posts whose source hasn't changed (see execute.freeze
+# in _quarto.yml).
+
+# Editor / OS
+/.idea/
+.DS_Store
+
+**/*.quarto_ipynb
