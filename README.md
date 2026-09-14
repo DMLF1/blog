@@ -82,7 +82,6 @@ with any of these:
 :::
 ```
 
-All four are demonstrated in `posts/attention-visualized/index.qmd`.
 Reference any figure elsewhere in the post with `@fig-thing` — Quarto
 resolves it to a real figure number at render time.
 
@@ -193,11 +192,10 @@ pyproject.toml           # Python deps for code chunks, managed with uv
 styles.css                # small, commented overrides — see "Dark mode and diagrams"
 posts/
   _metadata.yml          # defaults shared by every post (toc, code-fold, ...)
-  welcome/index.qmd
-  attention-visualized/
+  <post-slug>/
     index.qmd
     diagrams/            # diagrams used only by this post
-  calibration-curves/index.qmd
+    references.bib       # optional: bibliography for [@key] citations
 diagrams/                # diagrams shared across multiple posts
 .github/workflows/publish.yml
 ```
