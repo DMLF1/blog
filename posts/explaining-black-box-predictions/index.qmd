@@ -2,30 +2,28 @@
 title: "Explaining Black-Box Predictions: SHAP and What Comes After"
 subtitle: "A tour of SHAP and its alternatives — and the two problems that make black-box explanation genuinely hard: scale and multicollinearity."
 date: 2026-09-14
-categories: [explainability, shapley-values, feature-importance]
+categories: [explainability, shapley-values, xgboost]
 bibliography: references.bib
 ---
 
-A production model we work with is a gradient-boosted tree ensemble (and,
-in places, a neural net) trained on hundreds of features. Two questions
-come up constantly: *why* did this specific prediction come out the way it
-did, and *which* features are actually pulling weight versus just adding
-variance? Answering either one well means picking the right
-feature-importance method — and the landscape here is wider, and more
-fragile, than "just use SHAP" suggests.
+Our fraud model is an XGBoost ensemble (and, in places, a neural net) trained
+on over 200 features. Two questions come up constantly: *why* did this
+specific transaction get flagged, and *which* features are actually pulling
+weight versus just adding variance? Answering either one well means picking
+the right feature-importance method — and the landscape here is wider, and
+more fragile, than "just use SHAP" suggests.
 
-Embedded tree-based feature importance is highly sensitive to
-hyperparameter choices, so it's not something we can debug with or report
-to a client. Shapley values are the theoretically clean alternative, and
-this post is a tour of that family — SHAP itself, and what's been built on
-top of it. Two problems keep surfacing as the real obstacles, though, and
-they show up together on a model like ours: classic SHAP doesn't scale
-past a couple dozen features, and it gets actively unreliable once
-features are highly correlated, which many of ours are (a family of
-rolling time-window aggregates of the same underlying signal, for example
-— 1-hour, 24-hour, and 7-day versions of it). Both problems compound:
-correlated features are exactly the ones exact Shapley struggles to price
-sensibly.
+XGBoost's built-in feature importance is highly sensitive to hyperparameter
+choices, so it's not something we can debug with or report to a client.
+Shapley values are the theoretically clean alternative, and this post is a
+tour of that family — SHAP itself, and what's been built on top of it. Two
+problems keep surfacing as the real obstacles, though, and they show up
+together on a model like ours: classic SHAP doesn't scale past a couple
+dozen features, and it gets actively unreliable once features are highly
+correlated, which many of ours are (a family of "velocity" features
+computed over overlapping time windows, for example). Both problems
+compound: correlated features are exactly the ones exact Shapley struggles
+to price sensibly.
 
 This post works through the landscape: the families of feature-importance
 methods and where SHAP sits among them, why exact SHAP is intractable at
@@ -47,7 +45,7 @@ about the first and third; the second is our current (unreliable) baseline.
 Two more families exist but don't apply here: **Integrated Gradients**
 needs a differentiable model with respect to its inputs, and **LRP**
 (layer-wise relevance propagation) is neural-network-specific. Both are
-out for the tree-ensemble side of the model.
+out for the XGBoost side of the model.
 
 ## Shapley values, and why exact SHAP doesn't scale
 
@@ -66,7 +64,7 @@ In words: look at every permutation of features, with and without feature
 $i$, and average how much adding it changes the prediction. That sum has
 $2^{|F|-1}$ terms — exponential in the number of features — and in its
 purest form requires retraining the model on every feature subset. With
-hundreds of features, this is not "slow," it's simply not computable.
+200+ features, this is not "slow," it's simply not computable.
 
 Sampling-based estimators avoid retraining by Monte Carlo sampling
 permutations instead of enumerating them, and by *integrating out* missing
@@ -154,8 +152,7 @@ is already known to be untrustworthy.
 ## The multicollinearity problem
 
 None of the above fixes the second problem: when features are highly
-correlated — a family of rolling time-window features being the clearest
-example — their
+correlated — our velocity features being the clearest example — their
 joint contribution to a prediction gets *split* across all of them by the
 Shapley averaging process. Each individual value ends up small and close
 to arbitrary, even though the group of features clearly matters. There are
@@ -226,19 +223,19 @@ $10^{13}$.
 ![The two responses to a correlated feature group, side by side. Per-feature Shapley splits the joint signal into several small, individually unstable numbers; groupShapley reports one number for the whole group instead.](diagrams/groupshapley.drawio.svg){#fig-groupshapley}
 :::
 
-@fig-groupshapley shows the contrast for a rolling-window feature family
+@fig-groupshapley shows the contrast for our velocity features
 specifically. Groups can be built two ways: by *practical* meaning (e.g.
-all rolling-window aggregates as one group, all categorical encodings as
+all velocity features as one group, all entity-history features as
 another) or by *statistical dependence* (cluster whatever is actually
-correlated, whether or not it shares a name). For a case like this, the
-natural first cut is the practical one — group the rolling-window family
-together — with dependence-based grouping as a refinement if any group
-still turns out to mix loosely related features.
+correlated, whether or not it shares a name). For our case, the natural
+first cut is the practical one — group the velocity family together — with
+dependence-based grouping as a refinement if any group still turns out to
+mix loosely related features.
 
 Options A and B aren't mutually exclusive, and they answer different
-questions. groupShapley tells us whether the *rolling-window family as a
-whole* matters, cheaply and with all of Shapley's usual guarantees, but not
-which window (1h vs. 24h vs. 7d) is carrying that signal. The AF-correction
+questions. groupShapley tells us whether the *velocity family as a whole*
+matters, cheaply and with all of Shapley's usual guarantees, but not which
+window (1h vs. 24h vs. 7d) is carrying that signal. The AF-correction
 approach can still tell us that — at the cost of the additivity property
 and a more involved implementation, since off-the-shelf FastSHAP isn't
 built to decorrelate before attributing. In practice, groupShapley is the
