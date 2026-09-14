@@ -11,6 +11,10 @@ __pycache__/
 # skip re-executing posts whose source hasn't changed (see execute.freeze
 # in _quarto.yml).
 
+# Source material for posts — internal/unpublished, not meant for the
+# public repo. Individual assets get pulled into posts/ deliberately.
+/raw_materials/
+
 # Editor / OS
 /.idea/
 .DS_Store
