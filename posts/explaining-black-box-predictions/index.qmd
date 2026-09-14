@@ -1,31 +1,37 @@
 ---
-title: "Scaling Shapley Values to 200+ Correlated Features"
-subtitle: "Why exact SHAP breaks down on a large fraud model, and three ways to fix it: amortization, confidence-gated hybrids, and two different answers to multicollinearity."
+title: "Explaining Black-Box Predictions: SHAP and What Comes After"
+subtitle: "A tour of SHAP and its alternatives — and the two problems that make black-box explanation genuinely hard: scale and multicollinearity."
 date: 2026-09-14
 categories: [explainability, shapley-values, xgboost]
 bibliography: references.bib
 ---
 
 Our fraud model is an XGBoost ensemble (and, in places, a neural net) trained
-on over 200 features — and that number keeps growing. Two questions come up
-constantly: *why* did this specific transaction get flagged, and *which*
-features are actually pulling weight versus just adding variance? Right now
-we can't answer either one reliably.
+on over 200 features. Two questions come up constantly: *why* did this
+specific transaction get flagged, and *which* features are actually pulling
+weight versus just adding variance? Answering either one well means picking
+the right feature-importance method — and the landscape here is wider, and
+more fragile, than "just use SHAP" suggests.
 
 XGBoost's built-in feature importance is highly sensitive to hyperparameter
 choices, so it's not something we can debug with or report to a client.
-Shapley values are the theoretically clean alternative — but classic SHAP
-does not scale to 200+ features, and it gets actively unreliable once
-features are highly correlated, which many of ours are (a family of
-"velocity" features computed over overlapping time windows, for example).
-Both problems compound: correlated features are exactly the ones exact
-Shapley struggles to price sensibly.
+Shapley values are the theoretically clean alternative, and this post is a
+tour of that family — SHAP itself, and what's been built on top of it. Two
+problems keep surfacing as the real obstacles, though, and they show up
+together on a model like ours: classic SHAP doesn't scale past a couple
+dozen features, and it gets actively unreliable once features are highly
+correlated, which many of ours are (a family of "velocity" features
+computed over overlapping time windows, for example). Both problems
+compound: correlated features are exactly the ones exact Shapley struggles
+to price sensibly.
 
-This post works through where that leaves us: what's slow and why, one
-amortized method that gets per-sample explanations back to a single forward
-pass, a hybrid that only pays the expensive price when it needs to, and two
-different ways of handling correlated features — one that keeps per-feature
-detail, one that gives it up for something more stable.
+This post works through the landscape: the families of feature-importance
+methods and where SHAP sits among them, why exact SHAP is intractable at
+scale, one amortized method that gets per-sample explanations back to a
+single forward pass, a hybrid that only pays the expensive price when it
+needs to, and two different ways of handling correlated features — one
+that keeps per-feature detail, one that gives it up for something more
+stable.
 
 ## Where feature importance methods live
 
