@@ -24,19 +24,26 @@ The second challenge is correlation. When several features carry the same signal
 
 Neither problem has a free fix, but both have good partial answers. The rest of this post looks at what they are, and what each one costs.
 
-## Where feature importance methods live
+## Where feature-importance methods live
 
-Modern feature-importance methods fall into a few families. This post is
-about the first and third; the second is our current (unreliable) baseline.
+Feature-importance methods fall into a few overlapping families
+(@fig-taxonomy). This post covers removal-based methods and global
+surrogates.
 
-::: {.column-page}
-![The families of feature-importance methods under consideration. Gradient- and layer-relevance-based methods are excluded outright — they don't apply to a tree ensemble.](diagrams/families.drawio.svg){#fig-families}
-:::
+**Removal-based methods** remove features and measure how the model's output, or its error, changes. When the target is the Shapley value, it has to be estimated: permutation-sampling estimators (Štrumbelj & Kononenko) average a feature's contribution over random feature orderings, and amortized estimators train a separate model to output the estimates directly.
 
-Two more families exist but don't apply here: **Integrated Gradients**
-needs a differentiable model with respect to its inputs, and **LRP**
-(layer-wise relevance propagation) is neural-network-specific. Both are
-out for the XGBoost side of the model.
+**Surrogate methods** fit an interpretable model that mimics the black box: globally, as a decision tree, rule list or GAM, or locally, around a single prediction.
+
+The two families overlap in local surrogates. LIME and KernelSHAP both perturb the input around one prediction and fit a weighted linear model, differing mainly in the weighting kernel and regularisation; Anchors instead searches for an if-then rule that keeps the prediction unchanged.
+
+Out of scope:
+
+- **Embedded methods** read importance from the model's own structure or training (linear coefficients, tree gain), so they only exist for one model family.
+- **Gradient- and propagation-based methods** (Integrated Gradients, LRP) need access to a neural network's internals, its gradients or layers. DeepSHAP and GradientSHAP sit between this family and removal-based methods: they remove features against a background distribution, but compute contributions by propagating through the network.
+- **TreeSHAP** is removal-based and computes Shapley values exactly for tree ensembles, but it relies on tree structure and works for nothing else.
+- **Performance-based methods** (permutation importance, drop-column) are the subset of removal-based methods that measure how much the model's error grows without a feature. They need true labels, give only a global ranking with no direction, and both mishandle interactions and correlations. Permutation importance credits an interaction in full to every feature involved and can inflate correlated features by scoring the model on unrealistic inputs. Drop-column retrains once per feature, pushes correlated features towards zero, and misses effects that only appear when features are removed together.
+
+![Families of feature-importance methods. Solid circles are covered in this post; dashed circles and greyed labels are out of scope.](diagrams/feature_importance_venn.drawio.svg){#fig-taxonomy}
 
 ## Shapley values, and why exact SHAP doesn't scale
 
