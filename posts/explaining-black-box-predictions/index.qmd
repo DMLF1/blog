@@ -8,6 +8,8 @@ nocite: |
   @ribeiro2016, @broeck2022, @hooker2021
 ---
 
+## Introduction
+
 Most models that end up in production raise two questions. Why did the model make this particular prediction? Which features actually matter, and which just add noise? Stakeholders want to know why the model reached a given conclusion, and whether the features behind it match their understanding of the domain. The team building the model needs to know which features earn their place, both to guide feature engineering and to debug unexpected behaviour.
 
 Some models answer this out of the box. In linear models, it's the coefficients: with normalised features and some regularisation (or a Bayesian prior), each one roughly tells you how much its feature moves the prediction. High-performance non-linear models like boosted trees report importance scores too, but these are heuristic summaries with well-known biases, and neural networks don't offer one at all.
