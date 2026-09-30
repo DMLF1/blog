@@ -7,7 +7,7 @@ project:
     - "posts/**/*.qmd"
 
 website:
-  title: "ML/Viz Notes"
+  title: "ML Wizardry"
   description: "A technical blog about machine learning and data visualization."
   site-url: https://dmlf1.github.io/blog/
   search: true

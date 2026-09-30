@@ -1,4 +1,4 @@
-# ML/Viz Notes
+# ML Wizardry
 
 A Quarto blog prototype: Python code chunks (matplotlib + Plotly), diagrams
 as editable `.drawio.svg` files, deployed to GitHub Pages via GitHub

@@ -1,5 +1,5 @@
 ---
-title: "ML/Viz Notes"
+title: "ML Wizardry"
 listing:
   contents: posts
   type: default
