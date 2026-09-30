@@ -4,34 +4,23 @@ subtitle: "A tour of SHAP and its alternatives — and the two problems that mak
 date: 2026-09-14
 categories: [explainability, shapley-values, xgboost]
 bibliography: references.bib
+nocite: |
+  @ribeiro2016, @broeck2022, @hooker2021
 ---
 
-Our fraud model is an XGBoost ensemble (and, in places, a neural net) trained
-on over 200 features. Two questions come up constantly: *why* did this
-specific transaction get flagged, and *which* features are actually pulling
-weight versus just adding variance? Answering either one well means picking
-the right feature-importance method — and the landscape here is wider, and
-more fragile, than "just use SHAP" suggests.
+Most models that end up in production raise two questions. Why did the model make this particular prediction? Which features actually matter, and which just add noise? Stakeholders want to know why the model reached a given conclusion, and whether the features behind it match their understanding of the domain. The team building the model needs to know which features earn their place, both to guide feature engineering and to debug unexpected behaviour.
 
-XGBoost's built-in feature importance is highly sensitive to hyperparameter
-choices, so it's not something we can debug with or report to a client.
-Shapley values are the theoretically clean alternative, and this post is a
-tour of that family — SHAP itself, and what's been built on top of it. Two
-problems keep surfacing as the real obstacles, though, and they show up
-together on a model like ours: classic SHAP doesn't scale past a couple
-dozen features, and it gets actively unreliable once features are highly
-correlated, which many of ours are (a family of "velocity" features
-computed over overlapping time windows, for example). Both problems
-compound: correlated features are exactly the ones exact Shapley struggles
-to price sensibly.
+Some models answer this out of the box. In linear models, it's the coefficients: with normalised features and some regularisation (or a Bayesian prior), each one roughly tells you how much its feature moves the prediction. High-performance non-linear models like boosted trees report importance scores too, but these are heuristic summaries with well-known biases, and neural networks don't offer one at all.
 
-This post works through the landscape: the families of feature-importance
-methods and where SHAP sits among them, why exact SHAP is intractable at
-scale, one amortized method that gets per-sample explanations back to a
-single forward pass, a hybrid that only pays the expensive price when it
-needs to, and two different ways of handling correlated features — one
-that keeps per-feature detail, one that gives it up for something more
-stable.
+A useful explanation needs more than just a ranking. It should say which way a feature moved the prediction: "low income raised the risk" is an explanation, while "income matters" isn't. It should measure every contribution on the scale of the prediction itself, so you can compare one feature against another, or one model against the next. And it should be model-agnostic, treating the model as a black box, so the same method works for tree ensembles and neural networks alike.
+
+Model-agnostic methods meet these requirements to different degrees. Permutation importance is simple and cheap, but it only gives a global ranking, with no direction and no explanation of individual predictions. LIME explains individual predictions with signed weights, but these are only a local approximation and don't add up to the prediction. Shapley values meet every requirement and add guarantees on top: contributions sum exactly to the prediction, and a feature can't get less credit when the model relies on it more. That rigour comes at a price, and it's where the real challenges begin.
+
+The first challenge is scale. Computing a Shapley value means evaluating the model on every possible combination of features, and the number of combinations grows exponentially. Past a few dozen features, exact values are intractable. Sampling-based approximations help, but a single explanation can still take thousands of model calls.
+
+The second challenge is correlation. When several features carry the same signal, they compete for the credit. The importance gets split between them, sometimes evenly, sometimes arbitrarily, so each one looks weaker than the signal it represents, and small changes to the data or the model can reshuffle the split. Correlation also undermines the estimation itself. Numerically, "removing" a feature usually means sampling it from its marginal distribution, which ignores the correlation structure and creates inputs that are unrealistic or outright impossible: dozens of transactions with almost no money spent, or more transactions in the past hour than in the past day. The model's predictions on such inputs are meaningless, yet they feed straight into the explanation.
+
+Neither problem has a free fix, but both have good partial answers. The rest of this post looks at what they are, and what each one costs.
 
 ## Where feature importance methods live
 
@@ -69,7 +58,7 @@ purest form requires retraining the model on every feature subset. With
 Sampling-based estimators avoid retraining by Monte Carlo sampling
 permutations instead of enumerating them, and by *integrating out* missing
 features (averaging the prediction over background samples) instead of
-retraining without them [@aas2019]. This is what makes SHAP practical at
+retraining without them [@aas2021]. This is what makes SHAP practical at
 all — but it's still fundamentally doing many model evaluations per sample,
 and it is known to become unreliable when features are substantially
 correlated. Faster SHAP variants exist — model-agnostic Kernel SHAP and
