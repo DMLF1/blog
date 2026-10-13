@@ -63,11 +63,11 @@ These methods need true labels and give only **GLOBAL** scores with **NO DIRECTI
 
 How one prediction changes without a feature.
 
-- **Local approximation.** To explain one prediction, these methods generate many variations of the input, get the model's prediction for each, and fit a simple model to those predictions. LIME fits a linear model, weighted towards the variations closest to the original input; its coefficients are signed importances, but they shift with how the variations are sampled. Anchors instead finds an if-then rule under which the model's prediction stays the same.
+- **Local approximation.** To explain one prediction, these methods perturb the input to generate many nearby variations, then get the model's true prediction for each one — no retraining, just repeated evaluation of the existing black box. LIME weights each variation by how close it is to the original input, so nearby perturbations count more than distant ones, and fits a simple linear model through that weighted neighborhood; its coefficients become the signed, per-feature importances, though they shift with exactly which variations happened to get sampled. Anchors skips the weighted-regression step entirely and instead searches directly for an if-then rule — a small set of conditions on a few features — under which the model's prediction stays the same no matter what the other features do.
 - **Shapley values** add a well-defined target with guarantees, but exact computation is intractable, so they have to be estimated:
   - **Sampling estimators** (e.g. Štrumbelj & Kononenko) sample combinations of the other features and average the prediction difference with and without the feature of interest, using Shapley weights.
-  - **KernelSHAP** fits LIME's weighted linear model with a kernel and constraint chosen so that the weights estimate Shapley values.
-  - **FastSHAP** trains a neural network, once, to output Shapley values for any input in a single forward pass, so each new explanation costs almost nothing.
+  - **Regression-based.** KernelSHAP fits LIME's weighted linear model, but with the weighting kernel and a constraint chosen specifically so the fitted coefficients come out equal to the Shapley values themselves, not just a loose local stand-in for them.
+  - **Amortized methods.** FastSHAP trains a neural network, once, to output Shapley values for any input in a single forward pass, so each new explanation costs almost nothing.
 
 ### Model-specific methods (out of scope)
 
