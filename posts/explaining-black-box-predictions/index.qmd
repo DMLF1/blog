@@ -37,7 +37,7 @@ Surrogate methods replace the black box with an interpretable model that imitate
 
 - **Decision tree.** A shallow tree reproduces the model's predictions with just a few splits. Greedy deep trees are unstable, since small changes in the data can change the top splits, so stable surrogates need globally optimised shallow trees, such as evolutionary trees or optimal sparse trees.
 - **Rule list.** An ordered set of if-then rules, learned for example with RuleFit or Bayesian Rule Lists. Importance follows from which features appear in the rules and how much of the data each rule covers.
-- **GAM.** The prediction is modelled as a sum of separate curves, one per feature, sometimes with a few pairwise interactions, as in Explainable Boosting Machines. Each curve shows how its feature moves the prediction, and the curve's average absolute value across the data measures how much the feature matters.
+- **Additive models.** The prediction is modelled as a sum of separate curves, one per feature, sometimes with a few pairwise interactions, as in Explainable Boosting Machines. Each curve shows how its feature moves the prediction, and the curve's average absolute value across the data measures how much the feature matters.
 
 Surrogates are appealing, but they often struggle to keep up with high-performing models. With hundreds of features, a shallow tree or a short rule list can use only a handful of them. A plain GAM scales to many features but has no interactions; an EBM adds pairwise ones, but only a small fraction of the possible pairs, and every pair it adds makes the surrogate harder to read. The surrogate can then fit the model poorly, and its importances describe the surrogate rather than the model.
 
@@ -49,7 +49,7 @@ Removal-based methods simulate removing features, typically by replacing them wi
 
 ![Three ways to turn a dropped feature into a global importance score: shuffle it, retrain without it, or run Shapley values over the loss.](diagrams/taxonomy_removal_error.drawio.svg){#fig-taxonomy-removal-error}
 
-How much the model's error grows without a feature. These methods need true labels and give only global scores with no direction.
+These methods need true labels and give only global scores with no direction.
 
 - **Permutation-based.** Permutation importance (Breiman; also called model reliance) shuffles one feature's column and measures how much the error grows. If two features interact, shuffling either one destroys the whole interaction, so each gets full credit for it. With correlated features, it also creates unrealistic rows. Conditional permutation importance (Strobl et al.) avoids this by shuffling a feature only among rows with similar values of its correlated features; grouped permutation importance shuffles correlated features together, which keeps rows realistic but gives one score for the whole group.
 - **Retraining-based.** Drop-column importance, called leave-one-covariate-out (LOCO) when confidence intervals are added, retrains the model without the feature and measures how much the error grows. Because the model is retrained, a correlated feature can take over the dropped one's role, so both can score near zero even if the original model relied on them.
