@@ -183,17 +183,31 @@ is already known to be untrustworthy.
 
 ## The multicollinearity problem
 
-None of the above fixes the second problem: when features are highly
-correlated — our velocity features being the clearest example — their
-joint contribution to a prediction gets *split* across all of them by the
-Shapley averaging process. Each individual value ends up small and close
-to arbitrary, even though the group of features clearly matters. There are
-two genuinely different ways to respond to this.
+Correlated features — our velocity features being the clearest example —
+cause two distinct problems, not one, and it matters which is which.
 
-### Conditional Shapley values: respect the correlation structure
+The first is **estimation bias**, already flagged in the introduction:
+"removing" a feature means sampling a replacement for it from its own
+marginal distribution, independently of every feature that stays. With
+correlated features, that independence assumption is false, so the
+replacement values are combinations that never occur in real data — and
+every Shapley value computed that way inherits the error.
 
-The instability isn't the only problem — the estimate itself is biased
-when features are correlated, for the reason flagged in the introduction.
+The second is **credit instability**: even with a perfectly estimated
+value function, the Shapley averaging process itself *splits* a correlated
+group's joint contribution across its members. Each individual value ends
+up small and close to arbitrary, even though the group clearly matters —
+and no amount of estimation accuracy fixes this, because it's a property
+of how credit gets divided among correlated players, not of how well any
+single number is estimated.
+
+These need different fixes. Conditional Shapley values fix the first
+problem and do nothing for the second. groupShapley fixes the second
+problem directly, and — as a side effect, not by design — also sidesteps
+the first, at least for members of the same group.
+
+### Conditional Shapley values: fix the estimation bias
+
 Removing a feature means evaluating the model with that feature's value
 replaced, and the standard estimators do this by sampling a replacement
 from the feature's **marginal** distribution, independently of every
@@ -232,7 +246,13 @@ or copula model of the dependence structure, or a tree-based conditional
 estimator — which is more work than sampling a marginal distribution, and
 inherits whatever error that dependence model makes.
 
-### groupShapley: don't split the credit at all
+What this doesn't fix: a correlated feature's value can still come out
+small and hard to interpret, even with a perfectly estimated conditional
+distribution. That's the credit-instability problem, and it's untouched
+here — getting $v(S)$ right doesn't change how many ways there are to
+split a correlated group's shared signal among its members.
+
+### groupShapley: fix the instability (and the bias, for free)
 
 **groupShapley** [@jullum2021] takes the opposite approach: instead of
 correcting individual features, compute Shapley values for *groups* of
@@ -249,10 +269,20 @@ where $\mathcal{G} = \{\mathcal{G}_1, \dots, \mathcal{G}_G\}$ is a
 partition of the features into $G$ groups. Because this is still exactly
 the Shapley framework — just applied to groups instead of individual
 features — it keeps every one of the usual guarantees (efficiency,
-symmetry, the null-player property) that Option A gives up. It's also
-dramatically cheaper: complexity drops from $2^{|F|-1}$ to $2^{G-1}$. With
-50 features collapsed into 5 groups, that's a reduction factor over
-$10^{13}$.
+symmetry, the null-player property). It's also dramatically cheaper:
+complexity drops from $2^{|F|-1}$ to $2^{G-1}$. With 50 features
+collapsed into 5 groups, that's a reduction factor over $10^{13}$.
+
+This fixes the instability directly: a correlated group's joint
+contribution is no longer divided among its members at all, so there's
+nothing left to split unpredictably. It also sidesteps the estimation
+bias from the previous section — but only incidentally, and only within
+a group. Removing a group means including or excluding *all* of its
+members together, so there's never a step where one correlated feature
+is set to some value while its correlated partner is held fixed; the
+"impossible row" problem simply doesn't arise for features that are
+always moved as a unit. What it can't do is tell you which member of the
+group is actually carrying the signal.
 
 ::: {.column-page}
 ![The two responses to a correlated feature group, side by side. Per-feature Shapley splits the joint signal into several small, individually unstable numbers; groupShapley reports one number for the whole group instead.](diagrams/groupshapley.drawio.svg){#fig-groupshapley}
@@ -267,17 +297,19 @@ first cut is the practical one — group the velocity family together — with
 dependence-based grouping as a refinement if any group still turns out to
 mix loosely related features.
 
-Conditional Shapley values and groupShapley aren't mutually exclusive, and
-they answer different questions. groupShapley tells us whether the
-*velocity family as a whole* matters, cheaply and without needing any
-model of the dependence structure, but not which window (1h vs. 24h vs.
-7d) is carrying that signal. Conditional Shapley values can still tell us
-that, at full per-feature granularity and without sacrificing any of
-Shapley's guarantees — at the cost of needing a working model of how the
-features depend on each other, and the estimation overhead that comes
-with it. In practice, groupShapley is the cheaper first thing to try;
-conditional Shapley values only once a group turns out to matter and we
-need to know which member drives it.no, whe I said change col
+Conditional Shapley values and groupShapley fix different problems, and
+neither substitutes for the other. groupShapley tells us whether the
+*velocity family as a whole* matters — cheaply, without needing any model
+of the dependence structure, and with the instability resolved — but not
+which window (1h vs. 24h vs. 7d) is carrying that signal. Conditional
+Shapley values don't answer that either: a correlated feature's value can
+still come out small and unstable even with a perfectly estimated
+conditional distribution, since that instability was never an estimation
+problem to begin with. What conditional Shapley values fix is the
+estimation bias itself, which matters with or without any grouping at
+all. In practice: group first to tame the instability; reach for
+conditional Shapley values — on the model as a whole, not as a substitute
+for grouping — when the marginal-sampling bias is the actual concern.
 
 ## References
 
