@@ -277,31 +277,7 @@ Shapley's guarantees — at the cost of needing a working model of how the
 features depend on each other, and the estimation overhead that comes
 with it. In practice, groupShapley is the cheaper first thing to try;
 conditional Shapley values only once a group turns out to matter and we
-need to know which member drives it.
-
-## A different lever: surrogate models
-
-Every method above stays inside the Shapley framework. A structurally
-different option is to train a simpler, more interpretable model that
-mimics the black-box one closely enough to *stand in* for it — most
-commonly a decision tree. **Genetic decision trees** [@kennedy2022] make
-this more viable than a single greedily-grown tree: a population of
-candidate trees is generated with bootstrap sampling, then evolved by
-mutating and combining the strongest candidates over several rounds
-instead of growing one tree greedily start-to-finish. The result is a
-single tree that's denser and more stable while staying close in
-performance to the original ensemble. It's a fundamentally different kind
-of explanation — a whole visualizable decision path instead of a
-per-feature number — worth keeping in mind as a complement to
-Shapley-based methods, not a replacement.
-
-(Worth flagging: the source notes for this post linked "Genetic Decision
-Trees" to arXiv:1904.12847, but that paper is actually *Optimal Sparse
-Decision Trees* [@hu2019] — a different, dynamic-programming-based method
-for building small trees, not the bootstrapped/evolved approach described
-above. The bootstrapped-and-mutated technique matches @kennedy2022
-instead, which isn't a formal paper — worth keeping in mind if this needs
-a peer-reviewed citation later.)
+need to know which member drives it.no, whe I said change col
 
 ## References
 
