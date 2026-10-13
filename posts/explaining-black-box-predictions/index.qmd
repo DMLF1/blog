@@ -25,18 +25,18 @@ Correlation causes a subtler problem too: it distorts the estimate itself. Shapl
 
 Neither problem has a free fix, but both have good partial answers. The rest of this post looks at what they are, and what each one costs.
 
-## Where feature-importance methods live
+## Explainability Landscape
 
-Feature-importance methods fall into a few overlapping families: surrogate methods, removal-based methods, and model-specific methods. This post covers the first two — model-agnostic removal-based methods and global surrogates — and focuses on methods that explain individual predictions, with performance-based methods such as permutation importance discussed for comparison. Model-specific methods are out of scope.
+Explainability methods fall into 3 main families: surrogate methods, removal-based methods, and model-specific methods. This post covers the first two — model-agnostic removal-based methods and model surrogates.
 
 ### Surrogate methods
 
-![Surrogate methods: a global, interpretable stand-in for the black box.](diagrams/taxonomy_surrogates.drawio.svg){#fig-taxonomy-surrogates}
+![Surrogate methods: an interpretable model trained on the black box's own predictions.](diagrams/taxonomy_surrogates.drawio.svg){#fig-taxonomy-surrogates}
 
-Surrogate methods approximate the black box with an interpretable model trained on its predictions across the whole dataset. The resulting importance is only as reliable as the approximation.
+Surrogate methods approximate the black box with an interpretable model trained on its predictions across the whole dataset.
 
-- **Decision tree.** A shallow tree reproduces the model's predictions with a few splits. Greedy trees are unstable, since small changes in the data can change the top splits, so stable surrogates need globally optimised trees, such as evolutionary trees or optimal sparse trees. Features used in early splits matter most.
-- **Rule list.** An ordered set of if-then rules, learned for example with RuleFit or Bayesian Rule Lists, covers the input space. Importance follows from which features appear in the rules and how much of the data each rule covers.
+- **Decision tree.** A shallow tree reproduces the model's predictions with a few splits. Greedy deep trees are unstable, since small changes in the data can change the top splits. Therefore, stable surrogates need globally optimised shallow trees, such as evolutionary trees or optimal sparse trees.
+- **Rule list.** An ordered set of if-then rules, learned for example with RuleFit or Bayesian Rule Lists. Importance follows from which features appear in the rules and how much of the data each rule covers.
 - **GAM.** The prediction is modelled as a sum of separate curves, one per feature, sometimes with a few pairwise interactions, as in Explainable Boosting Machines. Each curve shows how its feature moves the prediction, and its average size measures how much the feature matters.
 
 ### Removal-based methods
