@@ -181,46 +181,49 @@ Shapley averaging process. Each individual value ends up small and close
 to arbitrary, even though the group of features clearly matters. There are
 two genuinely different ways to respond to this.
 
-### Option A: decorrelate, then attribute per feature
+### Conditional Shapley values: respect the correlation structure
 
-@basu2020 proposes removing the correlated component from every *other*
-feature before estimating a given feature's importance. To remove feature
-$j$'s component from feature $k$,
-solve for a correction term $AF_k$ that makes the two uncorrelated:
-
-$$
-\operatorname{cor}(X_j, X_k + AF_k) = 0
-\quad\Longrightarrow\quad
-AF_k = -\frac{\operatorname{cov}(X_j, X_k)}{\operatorname{var}(X_j)} X_j
-$$
-
-The same idea extends to decorrelating from two features $X_i, X_j$ at
-once:
+The instability isn't the only problem — the estimate itself is biased
+when features are correlated, for the reason flagged in the introduction.
+Removing a feature means evaluating the model with that feature's value
+replaced, and the standard estimators do this by sampling a replacement
+from the feature's **marginal** distribution, independently of every
+feature left in the model:
 
 $$
-a = \frac{\operatorname{cov}(X_i,X_k)\operatorname{var}(X_j) - \operatorname{cov}(X_j,X_k)\operatorname{cov}(X_i,X_j)}
-{\operatorname{var}(X_i)\operatorname{var}(X_j) - \operatorname{cov}(X_i,X_j)^2},
-\qquad
-b = \frac{\operatorname{cov}(X_j,X_k)\operatorname{var}(X_i) - \operatorname{cov}(X_i,X_k)\operatorname{cov}(X_i,X_j)}
-{\operatorname{var}(X_i)\operatorname{var}(X_j) - \operatorname{cov}(X_i,X_j)^2}
+v_{\text{marg}}(S) = \mathbb{E}_{X_{\bar{S}}}\big[f(x_S, X_{\bar{S}})\big]
 $$
 
-with $AF_k = aX_i + bX_j$. The trade-off is that the resulting values lose
-the *additivity* property — correlated features no longer cleanly split
-predictive credit between each other — in exchange for values that don't
-bounce around randomly among correlated features from run to run. It also
-gives us a diagnostic for free: comparing a pair of features' corrected
-marginal importances against their corrected *joint* importance tells us
-how independent they really are —
+That independence assumption is exactly what manufactures the unrealistic
+rows described earlier — a high value for one correlated feature paired
+with a low value for another, a combination that never occurs in real
+data. **Conditional Shapley values** [@aas2021] fix this at the source:
+replace the marginal expectation with the true **conditional**
+distribution of the missing features given the ones that remain,
 
 $$
-\frac{\text{Multcol\_}\varphi(A) + \text{Multcol\_}\varphi(B)}{\text{Multcol\_}\varphi(A,B)}
+v_{\text{cond}}(S) = \mathbb{E}\big[f(X) \mid X_S = x^*_S\big]
+= \int f(x_S, x_{\bar{S}})\; p(x_{\bar{S}} \mid X_S = x^*_S)\; dx_{\bar{S}}
 $$
 
-— a ratio of 1 means fully independent; the further from 1, the more
-correlated.
+so that whenever a feature is "removed," its replacement value is drawn
+consistent with whatever the retained features already imply about it,
+rather than treated as if it varies freely.
 
-### Option B: don't split the credit at all
+Nothing about the Shapley averaging formula itself changes — only how the
+value function $v(S)$ is estimated — so conditional Shapley values keep
+every one of the usual guarantees (additivity, symmetry, the null-player
+property) that the marginal version has. What changes is what "importance"
+means for a correlated feature: a feature that's largely a proxy for
+another one can score lower under the conditional version, since
+conditioning on its correlated partner already explains most of what it
+would otherwise get credit for. The cost is that the conditional
+distribution itself has to be estimated — Monte Carlo sampling, a Gaussian
+or copula model of the dependence structure, or a tree-based conditional
+estimator — which is more work than sampling a marginal distribution, and
+inherits whatever error that dependence model makes.
+
+### groupShapley: don't split the credit at all
 
 **groupShapley** [@jullum2021] takes the opposite approach: instead of
 correcting individual features, compute Shapley values for *groups* of
@@ -255,15 +258,17 @@ first cut is the practical one — group the velocity family together — with
 dependence-based grouping as a refinement if any group still turns out to
 mix loosely related features.
 
-Options A and B aren't mutually exclusive, and they answer different
-questions. groupShapley tells us whether the *velocity family as a whole*
-matters, cheaply and with all of Shapley's usual guarantees, but not which
-window (1h vs. 24h vs. 7d) is carrying that signal. The AF-correction
-approach can still tell us that — at the cost of the additivity property
-and a more involved implementation, since off-the-shelf FastSHAP isn't
-built to decorrelate before attributing. In practice, groupShapley is the
-cheaper first thing to try; individual-feature decorrelation only if a
-group turns out to matter and we need to know which member drives it.
+Conditional Shapley values and groupShapley aren't mutually exclusive, and
+they answer different questions. groupShapley tells us whether the
+*velocity family as a whole* matters, cheaply and without needing any
+model of the dependence structure, but not which window (1h vs. 24h vs.
+7d) is carrying that signal. Conditional Shapley values can still tell us
+that, at full per-feature granularity and without sacrificing any of
+Shapley's guarantees — at the cost of needing a working model of how the
+features depend on each other, and the estimation overhead that comes
+with it. In practice, groupShapley is the cheaper first thing to try;
+conditional Shapley values only once a group turns out to matter and we
+need to know which member drives it.
 
 ## A different lever: surrogate models
 
@@ -349,7 +354,6 @@ a peer-reviewed citation later.)
 References already cited later in the post (FastSHAP's alternatives, Selective Explanations, multicollinearity, surrogate models), listed here as a placeholder until those sections get the same treatment:
 
 34. Paes, L. M., Wei, D., & Calmon, F. P. (2024). *Selective Explanations*. arXiv:2405.19562. [https://arxiv.org/abs/2405.19562](https://arxiv.org/abs/2405.19562)
-35. Basu, I., & Maji, S. (2020). *Multicollinearity Correction and Combined Feature Effect in Shapley Values*. arXiv:2011.01661. [https://arxiv.org/abs/2011.01661](https://arxiv.org/abs/2011.01661)
-36. Jullum, M., Redelmeier, A., & Aas, K. (2021). *groupShapley: Efficient Prediction Explanation with Shapley Values for Feature Groups*. Norwegian Computing Center, SAMBA/20/21. [https://arxiv.org/abs/2106.12228](https://arxiv.org/abs/2106.12228)
-37. Kennedy, W. B. (2022). *Create Stronger Decision Trees with Bootstrapping and Genetic Algorithms*. Towards Data Science. [https://github.com/Brett-Kennedy/GeneticDecisionTree](https://github.com/Brett-Kennedy/GeneticDecisionTree)
-38. Hu, X., Rudin, C., & Seltzer, M. (2019). *Optimal Sparse Decision Trees*. arXiv:1904.12847. [https://arxiv.org/abs/1904.12847](https://arxiv.org/abs/1904.12847)
+35. Jullum, M., Redelmeier, A., & Aas, K. (2021). *groupShapley: Efficient Prediction Explanation with Shapley Values for Feature Groups*. Norwegian Computing Center, SAMBA/20/21. [https://arxiv.org/abs/2106.12228](https://arxiv.org/abs/2106.12228)
+36. Kennedy, W. B. (2022). *Create Stronger Decision Trees with Bootstrapping and Genetic Algorithms*. Towards Data Science. [https://github.com/Brett-Kennedy/GeneticDecisionTree](https://github.com/Brett-Kennedy/GeneticDecisionTree)
+37. Hu, X., Rudin, C., & Seltzer, M. (2019). *Optimal Sparse Decision Trees*. arXiv:1904.12847. [https://arxiv.org/abs/1904.12847](https://arxiv.org/abs/1904.12847)
