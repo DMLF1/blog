@@ -41,24 +41,31 @@ Surrogate methods replace the black box with an interpretable model that imitate
 
 Surrogates are appealing, but they rarely keep up with high-performing models. With hundreds of features, a shallow tree or a short rule list can use only a handful of them, and a GAM, though it scales to many features, misses most interactions. The surrogate then fits the model poorly, and its importances describe the surrogate rather than the model.
 
-### Removal-based methods
+### Removal-Based Methods
 
-::: {.column-page}
-![Removal-based methods, split by what they measure: change in error (for comparison) versus change in a single prediction.](diagrams/taxonomy_removal.drawio.svg){#fig-taxonomy-removal}
-:::
+Removal-based methods simulate removing features, typically by replacing them with background values, and measure the effect. They differ in which effect they measure: the model's error, or a single prediction.
 
-Removal-based methods simulate removing features, typically by replacing them with background values, and measure the effect. They differ in which effect they measure.
+#### Change in error (performance-based, for comparison)
 
-- **Change in error** (performance-based, *for comparison*). How much the model's error grows without a feature. These methods need true labels and give only global scores with no direction.
-  - **Permutation-based.** Permutation importance (Breiman; also called model reliance) shuffles one feature's column and measures how much the error grows. If two features interact, shuffling either one destroys the whole interaction, so each gets full credit for it. With correlated features, it also creates unrealistic rows. Conditional permutation importance (Strobl et al.) avoids this by shuffling a feature only among rows with similar values of its correlated features; grouped permutation importance shuffles correlated features together, which keeps rows realistic but gives one score for the whole group.
-  - **Retraining-based.** Drop-column importance, called leave-one-covariate-out (LOCO) when confidence intervals are added, retrains the model without the feature and measures how much the error grows. Because the model is retrained, a correlated feature can take over the dropped one's role, so both can score near zero even if the original model relied on them.
-  - **Shapley-based.** SAGE (Covert et al.) applies Shapley values to the model's error, so the feature scores add up to the model's total error reduction. An interaction's effect is split between the features involved instead of being counted in full for each.
-- **Change in a single prediction.** How one prediction changes without a feature.
-  - **Local approximation.** To explain one prediction, these methods generate many variations of the input, get the model's prediction for each, and fit a simple model to those predictions. LIME fits a linear model, weighted towards the variations closest to the original input; its coefficients are signed importances, but they shift with how the variations are sampled. Anchors instead finds an if-then rule under which the model's prediction stays the same.
-  - **Shapley values** add a well-defined target with guarantees, but exact computation is intractable, so they have to be estimated:
-    - **Sampling estimators** (e.g. Štrumbelj & Kononenko) sample combinations of the other features and average the prediction difference with and without the feature of interest, using Shapley weights.
-    - **KernelSHAP** fits LIME's weighted linear model with a kernel and constraint chosen so that the weights estimate Shapley values.
-    - **FastSHAP** trains a neural network, once, to output Shapley values for any input in a single forward pass, so each new explanation costs almost nothing.
+![Change-in-error methods: how much the model's error grows without a feature.](diagrams/taxonomy_removal_error.drawio.svg){#fig-taxonomy-removal-error}
+
+How much the model's error grows without a feature. These methods need true labels and give only global scores with no direction.
+
+- **Permutation-based.** Permutation importance (Breiman; also called model reliance) shuffles one feature's column and measures how much the error grows. If two features interact, shuffling either one destroys the whole interaction, so each gets full credit for it. With correlated features, it also creates unrealistic rows. Conditional permutation importance (Strobl et al.) avoids this by shuffling a feature only among rows with similar values of its correlated features; grouped permutation importance shuffles correlated features together, which keeps rows realistic but gives one score for the whole group.
+- **Retraining-based.** Drop-column importance, called leave-one-covariate-out (LOCO) when confidence intervals are added, retrains the model without the feature and measures how much the error grows. Because the model is retrained, a correlated feature can take over the dropped one's role, so both can score near zero even if the original model relied on them.
+- **Shapley-based.** SAGE (Covert et al.) applies Shapley values to the model's error, so the feature scores add up to the model's total error reduction. An interaction's effect is split between the features involved instead of being counted in full for each.
+
+#### Change in a single prediction
+
+![Change-in-a-single-prediction methods: how one prediction changes without a feature.](diagrams/taxonomy_removal_prediction.drawio.svg){#fig-taxonomy-removal-prediction}
+
+How one prediction changes without a feature.
+
+- **Local approximation.** To explain one prediction, these methods generate many variations of the input, get the model's prediction for each, and fit a simple model to those predictions. LIME fits a linear model, weighted towards the variations closest to the original input; its coefficients are signed importances, but they shift with how the variations are sampled. Anchors instead finds an if-then rule under which the model's prediction stays the same.
+- **Shapley values** add a well-defined target with guarantees, but exact computation is intractable, so they have to be estimated:
+  - **Sampling estimators** (e.g. Štrumbelj & Kononenko) sample combinations of the other features and average the prediction difference with and without the feature of interest, using Shapley weights.
+  - **KernelSHAP** fits LIME's weighted linear model with a kernel and constraint chosen so that the weights estimate Shapley values.
+  - **FastSHAP** trains a neural network, once, to output Shapley values for any input in a single forward pass, so each new explanation costs almost nothing.
 
 ### Model-specific methods (out of scope)
 
