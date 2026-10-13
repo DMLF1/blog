@@ -1,7 +1,7 @@
 ---
 title: "Explaining Black-Box Predictions: SHAP and What Comes After"
 subtitle: "A tour of SHAP and its alternatives — and the two problems that make black-box explanation genuinely hard: scale and multicollinearity."
-date: 2026-09-14
+date: 2026-10-13
 categories: [explainability, shapley-values, xgboost]
 bibliography: references.bib
 suppress-bibliography: true
@@ -39,13 +39,13 @@ Surrogate methods replace the black box with an interpretable model that imitate
 - **Rule list.** An ordered set of if-then rules, learned for example with RuleFit or Bayesian Rule Lists. Importance follows from which features appear in the rules and how much of the data each rule covers.
 - **GAM.** The prediction is modelled as a sum of separate curves, one per feature, sometimes with a few pairwise interactions, as in Explainable Boosting Machines. Each curve shows how its feature moves the prediction, and the curve's average absolute value across the data measures how much the feature matters.
 
-Surrogates are appealing, but they rarely keep up with high-performing models. With hundreds of features, a shallow tree or a short rule list can use only a handful of them, and a GAM, though it scales to many features, misses most interactions. The surrogate then fits the model poorly, and its importances describe the surrogate rather than the model.
+Surrogates are appealing, but they rarely keep up with high-performing models. With hundreds of features, a shallow tree or a short rule list can use only a handful of them.  and a GAM, though it scales to many features, misses most interactions. The surrogate then fits the model poorly, and its importances describe the surrogate rather than the model.
 
 ### Removal-Based Methods
 
 Removal-based methods simulate removing features, typically by replacing them with background values, and measure the effect. They differ in which effect they measure: the model's error, or a single prediction.
 
-#### Change in error (performance-based, for comparison)
+#### Change in Error Methods
 
 ![Change-in-error methods: how much the model's error grows without a feature.](diagrams/taxonomy_removal_error.drawio.svg){#fig-taxonomy-removal-error}
 
