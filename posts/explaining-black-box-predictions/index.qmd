@@ -39,15 +39,15 @@ Surrogate methods replace the black box with an interpretable model that imitate
 - **Rule list.** An ordered set of if-then rules, learned for example with RuleFit or Bayesian Rule Lists. Importance follows from which features appear in the rules and how much of the data each rule covers.
 - **GAM.** The prediction is modelled as a sum of separate curves, one per feature, sometimes with a few pairwise interactions, as in Explainable Boosting Machines. Each curve shows how its feature moves the prediction, and the curve's average absolute value across the data measures how much the feature matters.
 
-Surrogates are appealing, but they rarely keep up with high-performing models. With hundreds of features, a shallow tree or a short rule list can use only a handful of them.  and a GAM, though it scales to many features, misses most interactions. The surrogate then fits the model poorly, and its importances describe the surrogate rather than the model.
+Surrogates are appealing, but they often struggle to keep up with high-performing models. With hundreds of features, a shallow tree or a short rule list can use only a handful of them. A plain GAM scales to many features but has no interactions; an EBM adds pairwise ones, but only a small fraction of the possible pairs, and every pair it adds makes the surrogate harder to read. The surrogate can then fit the model poorly, and its importances describe the surrogate rather than the model.
 
 ### Removal-Based Methods
 
-Removal-based methods simulate removing features, typically by replacing them with background values, and measure the effect. They differ in which effect they measure: the model's error, or a single prediction.
+Removal-based methods simulate removing features, typically by replacing them with background values, and measure the effect. They differ in which effect they measure: model's global error, or a single prediction.
 
 #### Change in Error Methods
 
-![Change-in-error methods: how much the model's error grows without a feature.](diagrams/taxonomy_removal_error.drawio.svg){#fig-taxonomy-removal-error}
+![Three ways to turn a dropped feature into a global importance score: shuffle it, retrain without it, or run Shapley values over the loss.](diagrams/taxonomy_removal_error.drawio.svg){#fig-taxonomy-removal-error}
 
 How much the model's error grows without a feature. These methods need true labels and give only global scores with no direction.
 
@@ -57,7 +57,7 @@ How much the model's error grows without a feature. These methods need true labe
 
 #### Change in a single prediction
 
-![Change-in-a-single-prediction methods: how one prediction changes without a feature.](diagrams/taxonomy_removal_prediction.drawio.svg){#fig-taxonomy-removal-prediction}
+![Two ways to explain one prediction without a feature: fit a simple local model, or estimate that feature's Shapley value directly.](diagrams/taxonomy_removal_prediction.drawio.svg){#fig-taxonomy-removal-prediction}
 
 How one prediction changes without a feature.
 
@@ -69,7 +69,7 @@ How one prediction changes without a feature.
 
 ### Model-specific methods (out of scope)
 
-![Model-specific methods: tied to one model family, out of scope for this post.](diagrams/taxonomy_model_specific.drawio.svg){#fig-taxonomy-modelspecific}
+![Three ways of reading importance straight out of a model's own internals -- out of scope for this post.](diagrams/taxonomy_model_specific.drawio.svg){#fig-taxonomy-modelspecific}
 
 Model-specific methods rely on a particular model's structure or internals, so each works for only one model family.
 
