@@ -31,27 +31,42 @@ Feature-importance methods fall into a few overlapping families: surrogate metho
 
 ### Surrogate methods
 
-Surrogate methods approximate the black box with an interpretable model trained on its predictions across the whole dataset; the resulting importance is only as reliable as the approximation. A **decision tree** surrogate reproduces the model's predictions with a shallow tree of a few splits — but greedy trees are unstable, since small changes in the data can change the top splits, so a stable surrogate needs a globally optimised tree, such as an evolutionary tree or an optimal sparse tree, and features used in early splits matter most. A **rule list** surrogate covers the input space with an ordered set of if-then rules, learned for example with RuleFit or Bayesian Rule Lists; importance follows from which features appear in the rules and how much of the data each rule covers. A **GAM** surrogate models the prediction as a sum of separate curves, one per feature, sometimes with a few pairwise interactions, as in Explainable Boosting Machines; each curve shows how its feature moves the prediction, and its average size measures how much the feature matters.
-
 ![Surrogate methods: a global, interpretable stand-in for the black box.](diagrams/taxonomy_surrogates.drawio.svg){#fig-taxonomy-surrogates}
 
+Surrogate methods approximate the black box with an interpretable model trained on its predictions across the whole dataset. The resulting importance is only as reliable as the approximation.
+
+- **Decision tree.** A shallow tree reproduces the model's predictions with a few splits. Greedy trees are unstable, since small changes in the data can change the top splits, so stable surrogates need globally optimised trees, such as evolutionary trees or optimal sparse trees. Features used in early splits matter most.
+- **Rule list.** An ordered set of if-then rules, learned for example with RuleFit or Bayesian Rule Lists, covers the input space. Importance follows from which features appear in the rules and how much of the data each rule covers.
+- **GAM.** The prediction is modelled as a sum of separate curves, one per feature, sometimes with a few pairwise interactions, as in Explainable Boosting Machines. Each curve shows how its feature moves the prediction, and its average size measures how much the feature matters.
+
 ### Removal-based methods
-
-Removal-based methods simulate removing a feature — typically by replacing it with background values — and measure the effect. They differ in which effect they measure: the model's error, or a single prediction.
-
-**Change in error** methods (performance-based, *for comparison*) measure how much the model's error grows without a feature; they need true labels and give only global scores with no direction. The classic version, permutation importance (Breiman; also called model reliance), shuffles one feature's column and measures how much the error grows. If two features interact, shuffling either one destroys the whole interaction, so each one gets full credit for it; with correlated features, shuffling also creates unrealistic rows. Conditional permutation importance (Strobl et al.) avoids this by shuffling a feature only among rows with similar values of its correlated features, and grouped permutation importance shuffles correlated features together, which keeps rows realistic but gives one score for the whole group. A **retraining-based** alternative, drop-column importance — called leave-one-covariate-out (LOCO) once confidence intervals are added — retrains the model without the feature and measures how much the error grows; because the model is retrained, a correlated feature can take over the dropped one's role, so both can score near zero even if the original model relied on them. A **Shapley-based** version, SAGE (Covert et al.), applies Shapley values to the model's error, so the feature scores add up to the model's total error reduction, and an interaction's effect is split between the features involved instead of being counted in full for each.
-
-**Change in a single prediction** methods instead measure how one prediction changes without a feature. **Local approximation** methods generate many variations of the input, get the model's prediction for each, and fit a simple model to those predictions: LIME fits a linear model weighted towards the variations closest to the original input, and its coefficients are signed importances that shift with how the variations are sampled, while Anchors instead finds an if-then rule under which the model's prediction stays the same. **Shapley values** add a well-defined target with guarantees, but exact computation is intractable, so they have to be estimated: sampling estimators (e.g. Štrumbelj & Kononenko) sample combinations of the other features and average the prediction difference with and without the feature of interest, using Shapley weights; KernelSHAP fits LIME's weighted linear model with a kernel and constraint chosen so the weights estimate Shapley values; and FastSHAP trains a neural network, once, to output Shapley values for any input in a single forward pass, so each new explanation costs almost nothing.
 
 ::: {.column-page}
 ![Removal-based methods, split by what they measure: change in error (for comparison) versus change in a single prediction.](diagrams/taxonomy_removal.drawio.svg){#fig-taxonomy-removal}
 :::
 
+Removal-based methods simulate removing features, typically by replacing them with background values, and measure the effect. They differ in which effect they measure.
+
+- **Change in error** (performance-based, *for comparison*). How much the model's error grows without a feature. These methods need true labels and give only global scores with no direction.
+  - **Permutation-based.** Permutation importance (Breiman; also called model reliance) shuffles one feature's column and measures how much the error grows. If two features interact, shuffling either one destroys the whole interaction, so each gets full credit for it. With correlated features, it also creates unrealistic rows. Conditional permutation importance (Strobl et al.) avoids this by shuffling a feature only among rows with similar values of its correlated features; grouped permutation importance shuffles correlated features together, which keeps rows realistic but gives one score for the whole group.
+  - **Retraining-based.** Drop-column importance, called leave-one-covariate-out (LOCO) when confidence intervals are added, retrains the model without the feature and measures how much the error grows. Because the model is retrained, a correlated feature can take over the dropped one's role, so both can score near zero even if the original model relied on them.
+  - **Shapley-based.** SAGE (Covert et al.) applies Shapley values to the model's error, so the feature scores add up to the model's total error reduction. An interaction's effect is split between the features involved instead of being counted in full for each.
+- **Change in a single prediction.** How one prediction changes without a feature.
+  - **Local approximation.** To explain one prediction, these methods generate many variations of the input, get the model's prediction for each, and fit a simple model to those predictions. LIME fits a linear model, weighted towards the variations closest to the original input; its coefficients are signed importances, but they shift with how the variations are sampled. Anchors instead finds an if-then rule under which the model's prediction stays the same.
+  - **Shapley values** add a well-defined target with guarantees, but exact computation is intractable, so they have to be estimated:
+    - **Sampling estimators** (e.g. Štrumbelj & Kononenko) sample combinations of the other features and average the prediction difference with and without the feature of interest, using Shapley weights.
+    - **KernelSHAP** fits LIME's weighted linear model with a kernel and constraint chosen so that the weights estimate Shapley values.
+    - **FastSHAP** trains a neural network, once, to output Shapley values for any input in a single forward pass, so each new explanation costs almost nothing.
+
 ### Model-specific methods (out of scope)
 
-Model-specific methods rely on a particular model's structure or internals, so each works for only one model family. **Embedded** methods read importance directly from the model, such as linear coefficients or tree gain. **TreeSHAP** computes exact Shapley values for tree ensembles by exploiting their structure. **Gradient- and propagation-based** methods — Integrated Gradients and LRP — need a neural network's gradients or layers; DeepSHAP and GradientSHAP sit between this group and removal-based methods, since they replace features with background values but compute contributions by propagating through the network.
-
 ![Model-specific methods: tied to one model family, out of scope for this post.](diagrams/taxonomy_model_specific.drawio.svg){#fig-taxonomy-modelspecific}
+
+Model-specific methods rely on a particular model's structure or internals, so each works for only one model family.
+
+- **Embedded.** Importance is read directly from the model, such as linear coefficients or tree gain.
+- **TreeSHAP.** Exact Shapley values for tree ensembles, computed by exploiting their structure.
+- **Gradient- and propagation-based.** Integrated Gradients and LRP need a neural network's gradients or layers. DeepSHAP and GradientSHAP sit between this group and removal-based methods: they replace features with background values but compute contributions by propagating through the network.
 
 ## Shapley values, and why exact SHAP doesn't scale
 
