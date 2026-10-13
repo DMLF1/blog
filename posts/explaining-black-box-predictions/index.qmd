@@ -49,11 +49,13 @@ Removal-based methods simulate removing features, typically by replacing them wi
 
 ![Three ways to turn a dropped feature into a global importance score: shuffle it, retrain without it, or run Shapley values over the loss.](diagrams/taxonomy_removal_error.drawio.svg){#fig-taxonomy-removal-error}
 
-These methods need true labels and give only global scores with no direction.
+These methods need true labels and give only **GLOBAL** scores with **NO DIRECTION**.
 
-- **Permutation-based.** Permutation importance (Breiman; also called model reliance) shuffles one feature's column and measures how much the error grows. If two features interact, shuffling either one destroys the whole interaction, so each gets full credit for it. With correlated features, it also creates unrealistic rows. Conditional permutation importance (Strobl et al.) avoids this by shuffling a feature only among rows with similar values of its correlated features; grouped permutation importance shuffles correlated features together, which keeps rows realistic but gives one score for the whole group.
-- **Retraining-based.** Drop-column importance, called leave-one-covariate-out (LOCO) when confidence intervals are added, retrains the model without the feature and measures how much the error grows. Because the model is retrained, a correlated feature can take over the dropped one's role, so both can score near zero even if the original model relied on them.
-- **Shapley-based.** SAGE (Covert et al.) applies Shapley values to the model's error, so the feature scores add up to the model's total error reduction. An interaction's effect is split between the features involved instead of being counted in full for each.
+- **Permutation-based.** Permutation importance shuffles one feature's column and measures how much the error grows. If two features interact, shuffling either one destroys the whole interaction, so each gets full credit for it. With correlated features, it also creates unrealistic rows.
+    - Conditional permutation importance avoids this by shuffling a feature only among rows with similar values of its correlated features
+    - Grouped permutation importance shuffles correlated features together, which keeps rows realistic but gives one score for the whole group
+- **Retraining-based.** Drop-column importance retrains the model without a feature and measures how much the error grows; LOCO adds confidence intervals to the same idea. Because a new model is trained each time, correlated features can stand in for each other: dropping either one costs little, so both features score near zero even if the original model relied on them. This is by far the most computationally costly approach.
+- **Shapley-based.** SAGE applies Shapley values to the model's error, so the feature scores add up to the model's total error reduction. An interaction's effect is split between the features involved instead of being counted in full for each.
 
 #### Change in a single prediction
 
