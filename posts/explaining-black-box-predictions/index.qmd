@@ -92,11 +92,12 @@ These methods trade generality for speed and, for TreeSHAP, freedom from samplin
 
 ## Shapley Values, and why exact SHAP doesn't scale
 
-SHAP [(Lundberg and Lee 2017)](#ref-2) casts feature attribution as the Shapley value from cooperative game theory, and shows that earlier methods such as LIME belong to the same family of additive attributions. For an input $x$, the Shapley value of feature $i$ is its average marginal contribution over all combinations of the other features:
 
 ::: {.column-page}
-![Each row is one literal term of the sum below: a subset S of the other features, the weight that term gets — which depends only on $|S|$, not on which features are in it — and the marginal contribution it adds. Weighted-sum all of them and the result is $\varphi_i$.](diagrams/shapley_sampling.drawio.svg){#fig-shapley-sampling}
+![Every one of the 8 subsets of the other features is its own term in the sum below. Subsets of the same size share a weight — the weight is a function of $|S|$ alone — but each specific combination still gets its own marginal-contribution term, since that depends on which features are actually in S. Weighted-sum all 8 terms and the result is $\varphi_i$.](diagrams/shapley_sampling.drawio.svg){#fig-shapley-sampling}
 :::
+
+SHAP [(Lundberg and Lee 2017)](#ref-2) casts feature attribution as the Shapley value from cooperative game theory, and shows that earlier methods such as LIME belong to the same family of additive attributions. For an input $x$, the Shapley value of feature $i$ is its average marginal contribution over all combinations of the other features:
 
 $$
 \varphi_i = \sum_{S \subseteq F \setminus \{i\}} \frac{|S|!\,(|F| - |S| - 1)!}{|F|!} \left[ f_{S \cup \{i\}}(x_{S \cup \{i\}}) - f_S(x_S) \right]
