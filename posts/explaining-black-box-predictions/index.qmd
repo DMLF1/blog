@@ -187,7 +187,7 @@ that maps any input directly to its Shapley values in a single forward
 pass. The current state of the art here is **FastSHAP** [(Jethani et al. 2022)](#ref-28).
 
 ::: {.column-page}
-![FastSHAP samples too — it isn't skipped, just moved. Classic SHAP repeats sampling and averaging for every explanation (top row). FastSHAP runs that identical step once, upfront, across many training inputs instead of one explanation (middle row) — then at explanation time (bottom row), that step is a no-op: already baked into the trained network, reused for every input instead of redone.](diagrams/classic-vs-fastshap.drawio.svg){#fig-fastshap}
+![FastSHAP samples too — it isn't skipped, just moved. Both lanes start the same way: sample feature subsets S. Classic SHAP (left) then averages the model's output over background samples for every explanation — the expensive step. FastSHAP (right) replaces that averaging with a learned surrogate, trained once upfront alongside the explainer network; at explanation time, that whole training phase is a no-op, and a single forward pass produces the estimate. Both lanes' final outputs are drawn level, to compare what each one actually costs per explanation.](diagrams/classic-vs-fastshap.drawio.svg){#fig-fastshap}
 :::
 
 @fig-fastshap shows the shift. FastSHAP trains two surrogates instead of
