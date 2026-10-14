@@ -26,7 +26,7 @@ Neither problem has a free fix, but both have good partial answers. The rest of 
 
 ## Explainability Landscape
 
-Explainability methods fall into 3 main families: surrogate methods, removal-based methods, and model-specific methods [@covert2021]. This post covers the first two — model-agnostic removal-based methods and model surrogates.
+Explainability methods fall into 3 main families: surrogate methods, removal-based methods, and model-specific methods [(Covert et al. 2021)](#ref-7). This post covers the first two — model-agnostic removal-based methods and model surrogates.
 
 ### Surrogate Methods
 
@@ -34,10 +34,10 @@ Explainability methods fall into 3 main families: surrogate methods, removal-bas
 
 Surrogate methods replace the black box with an interpretable model that imitates it, and read feature importance from that model instead. The resulting importance is only as reliable as the imitation. That imitation can target two different scopes: a **global surrogate** has to imitate the model everywhere, a **local surrogate** only has to imitate it around one prediction.
 
-- **Decision tree.** A shallow tree reproduces the model's predictions with just a few splits. Greedy deep trees are unstable, since small changes in the data can change the top splits, so stable surrogates need globally optimised shallow trees, such as evolutionary trees [@grubinger2014] or optimal sparse trees [@lin2020].
-- **Rule list.** An ordered set of if-then rules, learned for example with RuleFit [@friedman2008] or Bayesian Rule Lists [@letham2015]. Importance follows from which features appear in the rules and how much of the data each rule covers.
-- **Additive models.** The prediction is modelled as a sum of separate curves, one per feature, sometimes with a few pairwise interactions, as in Explainable Boosting Machines [@lou2013]. Each curve shows how its feature moves the prediction, and the curve's average absolute value across the data measures how much the feature matters.
-- **Local surrogate.** Instead of covering the whole input space, a local surrogate only needs to hold near one instance. **Anchors** [@ribeiro2018] searches for a small set of conditions on a few features — an if-then rule — under which the model's prediction stays the same for almost any value of the other features, found by perturbing the input and checking how often the rule still holds across the perturbations. The output isn't a magnitude or a direction like the surrogates above; it's just which conditions hold and how reliably they pin the prediction down.
+- **Decision tree.** A shallow tree reproduces the model's predictions with just a few splits. Greedy deep trees are unstable, since small changes in the data can change the top splits, so stable surrogates need globally optimised shallow trees, such as evolutionary trees [(Grubinger et al. 2014)](#ref-9) or optimal sparse trees [(Lin et al. 2020)](#ref-10).
+- **Rule list.** An ordered set of if-then rules, learned for example with RuleFit [(Friedman and Popescu 2008)](#ref-12) or Bayesian Rule Lists [(Letham et al. 2015)](#ref-13). Importance follows from which features appear in the rules and how much of the data each rule covers.
+- **Additive models.** The prediction is modelled as a sum of separate curves, one per feature, sometimes with a few pairwise interactions, as in Explainable Boosting Machines [(Lou et al. 2013)](#ref-14). Each curve shows how its feature moves the prediction, and the curve's average absolute value across the data measures how much the feature matters.
+- **Local surrogate.** Instead of covering the whole input space, a local surrogate only needs to hold near one instance. **Anchors** [(Ribeiro et al. 2018)](#ref-24) searches for a small set of conditions on a few features — an if-then rule — under which the model's prediction stays the same for almost any value of the other features, found by perturbing the input and checking how often the rule still holds across the perturbations. The output isn't a magnitude or a direction like the surrogates above; it's just which conditions hold and how reliably they pin the prediction down.
 
 Surrogates are appealing, but they often struggle to keep up with high-performing models. With hundreds of features, a shallow tree or a short rule list can use only a handful of them. A plain GAM scales to many features but has no interactions; an EBM adds pairwise ones, but only a small fraction of the possible pairs, and every pair it adds makes the surrogate harder to read. The surrogate can then fit the model poorly, and its importances describe the surrogate rather than the model. A local surrogate like Anchors sidesteps that scaling problem entirely, since it only ever has to explain one neighbourhood — at the cost of giving up any global view of the model.
 
@@ -51,11 +51,11 @@ Removal-based methods simulate removing features, typically by replacing them wi
 
 These methods need true labels and give only **GLOBAL** scores with **NO DIRECTION**.
 
-- **Permutation-based.** Permutation importance [@breiman2001] shuffles one feature's column and measures how much the error grows. If two features interact, shuffling either one destroys the whole interaction, so each gets full credit for it. With correlated features, it also creates unrealistic rows.
-    - Conditional permutation importance [@strobl2008] avoids this by shuffling a feature only among rows with similar values of its correlated features
-    - Grouped permutation importance [@gregorutti2015] shuffles correlated features together, which keeps rows realistic but gives one score for the whole group
-- **Retraining-based.** Drop-column importance retrains the model without a feature and measures how much the error grows; LOCO [@lei2018] adds confidence intervals to the same idea. Because a new model is trained each time, correlated features can stand in for each other: dropping either one costs little, so both features score near zero even if the original model relied on them. This is by far the most computationally costly approach.
-- **Shapley-based.** SAGE [@covert2020sage] applies Shapley values to the model's error, so the feature scores add up to the model's total error reduction. An interaction's effect is split between the features involved instead of being counted in full for each.
+- **Permutation-based.** Permutation importance [(Breiman 2001)](#ref-15) shuffles one feature's column and measures how much the error grows. If two features interact, shuffling either one destroys the whole interaction, so each gets full credit for it. With correlated features, it also creates unrealistic rows.
+    - Conditional permutation importance [(Strobl et al. 2008)](#ref-18) avoids this by shuffling a feature only among rows with similar values of its correlated features
+    - Grouped permutation importance [(Gregorutti et al. 2015)](#ref-19) shuffles correlated features together, which keeps rows realistic but gives one score for the whole group
+- **Retraining-based.** Drop-column importance retrains the model without a feature and measures how much the error grows; LOCO [(Lei et al. 2018)](#ref-20) adds confidence intervals to the same idea. Because a new model is trained each time, correlated features can stand in for each other: dropping either one costs little, so both features score near zero even if the original model relied on them. This is by far the most computationally costly approach.
+- **Shapley-based.** SAGE [(Covert et al. 2020)](#ref-22) applies Shapley values to the model's error, so the feature scores add up to the model's total error reduction. An interaction's effect is split between the features involved instead of being counted in full for each.
 
 In practice, drop-column importance and LOCO are too expensive for models with hundreds of features, which leaves permutation importance and SAGE. The difference between them is interactions. When the model combines two features, say approving a loan only if income is high and debt is low, shuffling either one breaks the combination, so permutation importance gives each feature the full effect and counts it twice. SAGE averages each feature's effect over all subsets of the others, so the effect is split between the features and the scores add up to the model's actual performance.
 
@@ -65,14 +65,14 @@ In practice, drop-column importance and LOCO are too expensive for models with h
 
 How one prediction changes without a feature.
 
-- **Local approximation.** LIME [@ribeiro2016] evaluates the model on many perturbed copies of one input, each resampling every feature independently from the training data and so ignoring correlations, then fits a linear model weighted by closeness to the input. Its coefficients are an averaged local slope: signed sensitivities that shift with the neighbourhood size and the samples, and don't sum to the prediction.
+- **Local approximation.** LIME [(Ribeiro et al. 2016)](#ref-23) evaluates the model on many perturbed copies of one input, each resampling every feature independently from the training data and so ignoring correlations, then fits a linear model weighted by closeness to the input. Its coefficients are an averaged local slope: signed sensitivities that shift with the neighbourhood size and the samples, and don't sum to the prediction.
 - **Shapley values** have a fixed target with guarantees: contributions sum to the prediction minus the average prediction, and a feature's value never drops when its contribution grows. Exact computation is intractable; the estimators below target the same values and differ in where the cost goes.
-  - **Averaging.** Štrumbelj & Kononenko [@strumbelj2010; @strumbelj2014] sample combinations of the other features and average the prediction difference with and without the feature, drawing off features from their marginals. The estimate is exact in the limit, but every explanation needs fresh model calls.
-  - **Regression.** KernelSHAP [@lundberg2017] fits one weighted regression on sampled combinations whose coefficients are the Shapley values, exactly so with all combinations. Each call informs every feature, so it usually needs fewer calls.
-  - **Amortised.** FastSHAP [@jethani2022] trains a network once, with KernelSHAP's objective, to output all Shapley values for any input. Each explanation becomes one forward pass; accuracy depends on training.
+  - **Averaging.** Štrumbelj & Kononenko [(Štrumbelj and Kononenko 2010, 2014)](#ref-25) sample combinations of the other features and average the prediction difference with and without the feature, drawing off features from their marginals. The estimate is exact in the limit, but every explanation needs fresh model calls.
+  - **Regression.** KernelSHAP [(Lundberg and Lee 2017)](#ref-27) fits one weighted regression on sampled combinations whose coefficients are the Shapley values, exactly so with all combinations. Each call informs every feature, so it usually needs fewer calls.
+  - **Amortised.** FastSHAP [(Jethani et al. 2022)](#ref-28) trains a network once, with KernelSHAP's objective, to output all Shapley values for any input. Each explanation becomes one forward pass; accuracy depends on training.
   - **Beyond marginal sampling.** Marginal draws create unrealistic inputs. Two alternatives:
-    - **Conditional.** Off features are drawn given the on ones, for example via a Gaussian copula [@aas2021]. Inputs stay realistic, but credit follows correlations: a feature the model ignores can take part of a correlated feature's credit, where marginal sampling gives it zero. It is also costlier.
-    - **Grouped.** A cluster of correlated features is switched on or off together [@jullum2021]. Inputs stay realistic and credit isn't split arbitrarily, but you get one value per group.
+    - **Conditional.** Off features are drawn given the on ones, for example via a Gaussian copula [(Aas et al. 2021)](#ref-5). Inputs stay realistic, but credit follows correlations: a feature the model ignores can take part of a correlated feature's credit, where marginal sampling gives it zero. It is also costlier.
+    - **Grouped.** A cluster of correlated features is switched on or off together [(Jullum et al. 2021)](#ref-35). Inputs stay realistic and credit isn't split arbitrarily, but you get one value per group.
 
 Compared with LIME, Shapley values answer a fixed question: estimators converge to the same numbers, while LIME's coefficients depend on its neighbourhood and samples. Contributions sum to the prediction, so they compare across features and average into global importances, and interactions are split by a principled rule. The cost is computation. On correlated features, both share the weakness of marginal sampling, which conditional or grouped sampling addresses for Shapley values.
 
@@ -82,51 +82,32 @@ Compared with LIME, Shapley values answer a fixed question: estimators converge 
 
 Model-specific methods read importance from a model's internals instead of probing it from the outside.
 
-- **Embedded.** Gain in tree ensembles comes free as a by-product of training. But it is computed on the training data, so it rewards overfitting; it favours features with many distinct values, gives no direction, and can drop when the model relies on a feature more [@strobl2007].
-- **Gradient- and propagation-based.** These methods work backward through a neural network. Integrated Gradients [@sundararajan2017] averages gradients along a straight line from a reference input to the actual input, since a single gradient is zero wherever the model is flat; the scores sum to the change in prediction. LRP [@bach2015] passes the output score itself backward, splitting it among each layer's inputs by their contribution, so the scores sum to the prediction.
+- **Embedded.** Gain in tree ensembles comes free as a by-product of training. But it is computed on the training data, so it rewards overfitting; it favours features with many distinct values, gives no direction, and can drop when the model relies on a feature more [(Strobl et al. 2007)](#ref-17).
+- **Gradient- and propagation-based.** These methods work backward through a neural network. Integrated Gradients [(Sundararajan et al. 2017)](#ref-30) averages gradients along a straight line from a reference input to the actual input, since a single gradient is zero wherever the model is flat; the scores sum to the change in prediction. LRP [(Bach et al. 2015)](#ref-31) passes the output score itself backward, splitting it among each layer's inputs by their contribution, so the scores sum to the prediction.
 - **Model-specific SHAP.**
-  - **TreeSHAP** [@lundberg2018] computes Shapley values exactly by walking the trees: at splits on features that are on, it follows the input's branch; at splits on features that are off, it follows both branches. With background data, it gives exact marginal values; without it, it uses the training counts stored in the tree as a rough stand-in for conditional sampling. Grouping isn't built in.
-  - **DeepSHAP** [@shrikumar2017] **and GradientSHAP** [@erion2021] approximate Shapley values by running DeepLIFT or Integrated Gradients against many background samples instead of one reference, and averaging.
+  - **TreeSHAP** [(Lundberg et al. 2018)](#ref-1) computes Shapley values exactly by walking the trees: at splits on features that are on, it follows the input's branch; at splits on features that are off, it follows both branches. With background data, it gives exact marginal values; without it, it uses the training counts stored in the tree as a rough stand-in for conditional sampling. Grouping isn't built in.
+  - **DeepSHAP** [(Shrikumar et al. 2017)](#ref-32) **and GradientSHAP** [(Erion et al. 2021)](#ref-33) approximate Shapley values by running DeepLIFT or Integrated Gradients against many background samples instead of one reference, and averaging.
 
 These methods trade generality for speed and, for TreeSHAP, freedom from sampling error. They don't escape the correlation problem: most fill off features from background samples, as marginal sampling does, path-dependent TreeSHAP only roughly approximates conditional sampling, and none supports grouping natively. Each also works only for its model family.
 
-## Shapley values, and why exact SHAP doesn't scale
+## Shapley Values, and why exact SHAP doesn't scale
 
-SHAP values are simultaneously an approximation of the classic Shapley
-value from cooperative game theory and a generalization of several other
-attribution methods, including LIME [@lundberg2017]. For a fixed sample
-$x$, the Shapley value for feature $i$ averages that feature's marginal
-contribution across every possible subset of the other features:
+SHAP [(Lundberg and Lee 2017)](#ref-2) casts feature attribution as the Shapley value from cooperative game theory, and shows that earlier methods such as LIME belong to the same family of additive attributions. For an input $x$, the Shapley value of feature $i$ is its average marginal contribution over all combinations of the other features:
 
 $$
-\varphi_i = \sum_{S \subseteq F \setminus \{i\}} \frac{|S|!\,(|F|-|S|-1)!}{|F|!}
-\Big[ f_{S \cup \{i\}}(x_{S \cup \{i\}}) - f_S(x_S) \Big]
+\varphi_i = \sum_{S \subseteq F \setminus \{i\}} \frac{|S|!\,(|F| - |S| - 1)!}{|F|!} \left[ f_{S \cup \{i\}}(x_{S \cup \{i\}}) - f_S(x_S) \right]
 $$
 
-In words: look at every permutation of features, with and without feature
-$i$, and average how much adding it changes the prediction. That sum has
-$2^{|F|-1}$ terms — exponential in the number of features — and in its
-purest form requires retraining the model on every feature subset. With
-200+ features, this is not "slow," it's simply not computable.
+Each term measures how much adding feature $i$ to one combination of the other features changes the prediction, and the Shapley value is the weighted average over every possible combination. There are $2^{|F|-1}$ combinations, and in the original formulation each one requires retraining the model on that subset. With hundreds of features, exact computation is intractable.
 
-Sampling-based estimators avoid retraining by Monte Carlo sampling
-permutations instead of enumerating them, and by *integrating out* missing
-features (averaging the prediction over background samples) instead of
-retraining without them [@aas2021]. This is what makes SHAP practical at
-all — but it's still fundamentally doing many model evaluations per sample,
-and it is known to become unreliable when features are substantially
-correlated. Faster SHAP variants exist — model-agnostic Kernel SHAP and
-model-specific Tree SHAP — but they trade one cost for another: Tree SHAP
-avoids the sampling problem via recursive tree traversal, at a memory cost
-of $O(TD^2 + TN)$ for an ensemble of $T$ trees of average depth $D$ with $N$
-total tree nodes [@lundberg2018]. For a large ensemble, that adds up fast.
+Sampling estimators make it practical: they sample combinations instead of enumerating them, and fill missing features with background samples instead of retraining [(Aas et al. 2021)](#ref-5). Each explanation still costs many model evaluations, and because missing features are filled independently, the estimates become unreliable under strong correlation. KernelSHAP needs fewer evaluations but still samples. TreeSHAP avoids sampling for tree ensembles, computing exact values by traversing the trees, at a cost that grows with the number of trees, their leaves and the square of their depth [(Lundberg et al. 2020)](#ref-29).
 
 ## Cutting the per-sample cost: FastSHAP
 
 The most efficient class of methods sidesteps per-sample computation
 entirely by *amortizing* it: train a parametric function once, up front,
 that maps any input directly to its Shapley values in a single forward
-pass. The current state of the art here is **FastSHAP** [@jethani2022].
+pass. The current state of the art here is **FastSHAP** [(Jethani et al. 2022)](#ref-28).
 
 ::: {.column-page}
 ![Where the two approaches spend their compute. Classic SHAP repeats the sampling process for every single prediction; FastSHAP moves that cost into training a surrogate model once.](diagrams/classic-vs-fastshap.drawio.svg){#fig-fastshap}
@@ -153,7 +134,7 @@ per-feature guarantees for tractability.
 
 ## Paying for accuracy only where it's needed: Selective Explanations
 
-**Selective Explanations** [@paes2024] is a hybrid: use the fast amortized
+**Selective Explanations** [(Paes et al. 2024)](#ref-34) is a hybrid: use the fast amortized
 estimate where it's already trustworthy, and fall back to the slow but
 accurate Monte Carlo estimate everywhere else.
 
@@ -231,7 +212,7 @@ $$
 That independence assumption is exactly what manufactures the unrealistic
 rows described earlier — a high value for one correlated feature paired
 with a low value for another, a combination that never occurs in real
-data. **Conditional Shapley values** [@aas2021] fix this at the source:
+data. **Conditional Shapley values** [(Aas et al. 2021)](#ref-5) fix this at the source:
 replace the marginal expectation with the true **conditional**
 distribution of the missing features given the ones that remain,
 
@@ -265,7 +246,7 @@ split a correlated group's shared signal among its members.
 
 ### groupShapley: fix the instability (and the bias, for free)
 
-**groupShapley** [@jullum2021] takes the opposite approach: instead of
+**groupShapley** [(Jullum et al. 2021)](#ref-35) takes the opposite approach: instead of
 correcting individual features, compute Shapley values for *groups* of
 features directly, by applying the same game-theoretic formula to groups
 instead of single features:
@@ -326,62 +307,62 @@ for grouping — when the marginal-sampling bias is the actual concern.
 
 ### Introduction
 
-1. Lundberg, S. M., Erion, G. G., & Lee, S.-I. (2018). *Consistent Individualized Feature Attribution for Tree Ensembles*. arXiv:1802.03888. [https://arxiv.org/abs/1802.03888](https://arxiv.org/abs/1802.03888)
-2. Lundberg, S. M., & Lee, S.-I. (2017). *A Unified Approach to Interpreting Model Predictions*. Advances in Neural Information Processing Systems (NeurIPS) 30. [https://arxiv.org/abs/1705.07874](https://arxiv.org/abs/1705.07874)
-3. Ribeiro, M. T., Singh, S., & Guestrin, C. (2016). *"Why Should I Trust You?": Explaining the Predictions of Any Classifier*. Proceedings of the 22nd ACM SIGKDD Conference on Knowledge Discovery and Data Mining. [https://arxiv.org/abs/1602.04938](https://arxiv.org/abs/1602.04938)
-4. Van den Broeck, G., Lykov, A., Schleich, M., & Suciu, D. (2022). *On the Tractability of SHAP Explanations*. Journal of Artificial Intelligence Research, 74, 851–886. [https://doi.org/10.1613/jair.1.13283](https://doi.org/10.1613/jair.1.13283)
-5. Aas, K., Jullum, M., & Løland, A. (2021). *Explaining Individual Predictions When Features Are Dependent: More Accurate Approximations to Shapley Values*. Artificial Intelligence, 298, 103502. [https://doi.org/10.1016/j.artint.2021.103502](https://doi.org/10.1016/j.artint.2021.103502)
-6. Hooker, G., Mentch, L., & Zhou, S. (2021). *Unrestricted Permutation Forces Extrapolation: Variable Importance Requires at Least One More Model, or There Is No Free Variable Importance*. Statistics and Computing, 31(6), 82. [https://doi.org/10.1007/s11222-021-10057-z](https://doi.org/10.1007/s11222-021-10057-z)
+1. <a id="ref-1"></a>Lundberg, S. M., Erion, G. G., & Lee, S.-I. (2018). *Consistent Individualized Feature Attribution for Tree Ensembles*. arXiv:1802.03888. [https://arxiv.org/abs/1802.03888](https://arxiv.org/abs/1802.03888)
+2. <a id="ref-2"></a>Lundberg, S. M., & Lee, S.-I. (2017). *A Unified Approach to Interpreting Model Predictions*. Advances in Neural Information Processing Systems (NeurIPS) 30. [https://arxiv.org/abs/1705.07874](https://arxiv.org/abs/1705.07874)
+3. <a id="ref-3"></a>Ribeiro, M. T., Singh, S., & Guestrin, C. (2016). *"Why Should I Trust You?": Explaining the Predictions of Any Classifier*. Proceedings of the 22nd ACM SIGKDD Conference on Knowledge Discovery and Data Mining. [https://arxiv.org/abs/1602.04938](https://arxiv.org/abs/1602.04938)
+4. <a id="ref-4"></a>Van den Broeck, G., Lykov, A., Schleich, M., & Suciu, D. (2022). *On the Tractability of SHAP Explanations*. Journal of Artificial Intelligence Research, 74, 851–886. [https://doi.org/10.1613/jair.1.13283](https://doi.org/10.1613/jair.1.13283)
+5. <a id="ref-5"></a>Aas, K., Jullum, M., & Løland, A. (2021). *Explaining Individual Predictions When Features Are Dependent: More Accurate Approximations to Shapley Values*. Artificial Intelligence, 298, 103502. [https://doi.org/10.1016/j.artint.2021.103502](https://doi.org/10.1016/j.artint.2021.103502)
+6. <a id="ref-6"></a>Hooker, G., Mentch, L., & Zhou, S. (2021). *Unrestricted Permutation Forces Extrapolation: Variable Importance Requires at Least One More Model, or There Is No Free Variable Importance*. Statistics and Computing, 31(6), 82. [https://doi.org/10.1007/s11222-021-10057-z](https://doi.org/10.1007/s11222-021-10057-z)
 
 ### Where feature-importance methods live
 
 **Framework**
 
-7. Covert, I., Lundberg, S., & Lee, S.-I. (2021). *Explaining by Removing: A Unified Framework for Model Explanation*. Journal of Machine Learning Research, 22(209), 1–90. [https://arxiv.org/abs/2011.14878](https://arxiv.org/abs/2011.14878)
+7. <a id="ref-7"></a>Covert, I., Lundberg, S., & Lee, S.-I. (2021). *Explaining by Removing: A Unified Framework for Model Explanation*. Journal of Machine Learning Research, 22(209), 1–90. [https://arxiv.org/abs/2011.14878](https://arxiv.org/abs/2011.14878)
 
 **Surrogate methods**
 
-8. Craven, M. W., & Shavlik, J. W. (1996). *Extracting Tree-Structured Representations of Trained Networks*. Advances in Neural Information Processing Systems 8.
-9. Grubinger, T., Zeileis, A., & Pfeiffer, K.-P. (2014). *evtree: Evolutionary Learning of Globally Optimal Classification and Regression Trees in R*. Journal of Statistical Software, 61(1), 1–29. [https://doi.org/10.18637/jss.v061.i01](https://doi.org/10.18637/jss.v061.i01)
-10. Lin, J., Zhong, C., Hu, D., Rudin, C., & Seltzer, M. (2020). *Generalized and Scalable Optimal Sparse Decision Trees*. International Conference on Machine Learning (ICML). [https://proceedings.mlr.press/v119/lin20g.html](https://proceedings.mlr.press/v119/lin20g.html)
-11. Tan, S., Caruana, R., Hooker, G., & Lou, Y. (2018). *Distill-and-Compare: Auditing Black-Box Models Using Transparent Model Distillation*. AAAI/ACM Conference on AI, Ethics, and Society. [https://arxiv.org/abs/1710.06169](https://arxiv.org/abs/1710.06169)
-12. Friedman, J. H., & Popescu, B. E. (2008). *Predictive Learning via Rule Ensembles*. Annals of Applied Statistics, 2(3), 916–954. [https://doi.org/10.1214/07-AOAS148](https://doi.org/10.1214/07-AOAS148)
-13. Letham, B., Rudin, C., McCormick, T. H., & Madigan, D. (2015). *Interpretable Classifiers Using Rules and Bayesian Analysis: Building a Better Stroke Prediction Model*. Annals of Applied Statistics, 9(3), 1350–1371. [https://doi.org/10.1214/15-AOAS848](https://doi.org/10.1214/15-AOAS848)
-14. Lou, Y., Caruana, R., Gehrke, J., & Hooker, G. (2013). *Accurate Intelligible Models with Pairwise Interactions*. Proceedings of the 19th ACM SIGKDD International Conference on Knowledge Discovery and Data Mining, 623–631. [https://doi.org/10.1145/2487575.2487579](https://doi.org/10.1145/2487575.2487579)
+8. <a id="ref-8"></a>Craven, M. W., & Shavlik, J. W. (1996). *Extracting Tree-Structured Representations of Trained Networks*. Advances in Neural Information Processing Systems 8.
+9. <a id="ref-9"></a>Grubinger, T., Zeileis, A., & Pfeiffer, K.-P. (2014). *evtree: Evolutionary Learning of Globally Optimal Classification and Regression Trees in R*. Journal of Statistical Software, 61(1), 1–29. [https://doi.org/10.18637/jss.v061.i01](https://doi.org/10.18637/jss.v061.i01)
+10. <a id="ref-10"></a>Lin, J., Zhong, C., Hu, D., Rudin, C., & Seltzer, M. (2020). *Generalized and Scalable Optimal Sparse Decision Trees*. International Conference on Machine Learning (ICML). [https://proceedings.mlr.press/v119/lin20g.html](https://proceedings.mlr.press/v119/lin20g.html)
+11. <a id="ref-11"></a>Tan, S., Caruana, R., Hooker, G., & Lou, Y. (2018). *Distill-and-Compare: Auditing Black-Box Models Using Transparent Model Distillation*. AAAI/ACM Conference on AI, Ethics, and Society. [https://arxiv.org/abs/1710.06169](https://arxiv.org/abs/1710.06169)
+12. <a id="ref-12"></a>Friedman, J. H., & Popescu, B. E. (2008). *Predictive Learning via Rule Ensembles*. Annals of Applied Statistics, 2(3), 916–954. [https://doi.org/10.1214/07-AOAS148](https://doi.org/10.1214/07-AOAS148)
+13. <a id="ref-13"></a>Letham, B., Rudin, C., McCormick, T. H., & Madigan, D. (2015). *Interpretable Classifiers Using Rules and Bayesian Analysis: Building a Better Stroke Prediction Model*. Annals of Applied Statistics, 9(3), 1350–1371. [https://doi.org/10.1214/15-AOAS848](https://doi.org/10.1214/15-AOAS848)
+14. <a id="ref-14"></a>Lou, Y., Caruana, R., Gehrke, J., & Hooker, G. (2013). *Accurate Intelligible Models with Pairwise Interactions*. Proceedings of the 19th ACM SIGKDD International Conference on Knowledge Discovery and Data Mining, 623–631. [https://doi.org/10.1145/2487575.2487579](https://doi.org/10.1145/2487575.2487579)
 
 **Removal-based methods — change in error (performance-based, for comparison)**
 
-15. Breiman, L. (2001). *Random Forests*. Machine Learning, 45(1), 5–32. [https://doi.org/10.1023/A:1010933404324](https://doi.org/10.1023/A:1010933404324)
-16. Fisher, A., Rudin, C., & Dominici, F. (2019). *All Models Are Wrong, but Many Are Useful: Learning a Variable's Importance by Studying an Entire Class of Prediction Models Simultaneously*. Journal of Machine Learning Research, 20(177), 1–81.
-17. Strobl, C., Boulesteix, A.-L., Zeileis, A., & Hothorn, T. (2007). *Bias in Random Forest Variable Importance Measures: Illustrations, Sources and a Solution*. BMC Bioinformatics, 8, 25. [https://doi.org/10.1186/1471-2105-8-25](https://doi.org/10.1186/1471-2105-8-25)
-18. Strobl, C., Boulesteix, A.-L., Kneib, T., Augustin, T., & Zeileis, A. (2008). *Conditional Variable Importance for Random Forests*. BMC Bioinformatics, 9, 307. [https://doi.org/10.1186/1471-2105-9-307](https://doi.org/10.1186/1471-2105-9-307)
-19. Gregorutti, B., Michel, B., & Saint-Pierre, P. (2015). *Grouped Variable Importance with Random Forests and Application to Multiple Functional Data Analysis*. Computational Statistics & Data Analysis, 90, 15–35. [https://doi.org/10.1016/j.csda.2015.04.002](https://doi.org/10.1016/j.csda.2015.04.002)
-20. Lei, J., G'Sell, M., Rinaldo, A., Tibshirani, R. J., & Wasserman, L. (2018). *Distribution-Free Predictive Inference for Regression*. Journal of the American Statistical Association, 113(523), 1094–1111. [https://doi.org/10.1080/01621459.2017.1307116](https://doi.org/10.1080/01621459.2017.1307116)
-21. Molnar, C. (2025). *Interpretable Machine Learning* (3rd ed.), chapters on Permutation Feature Importance and LOFO. [https://christophm.github.io/interpretable-ml-book/](https://christophm.github.io/interpretable-ml-book/)
-22. Covert, I., Lundberg, S. M., & Lee, S.-I. (2020). *Understanding Global Feature Contributions With Additive Importance Measures*. Advances in Neural Information Processing Systems (NeurIPS) 33. [https://papers.nips.cc/paper/2020/hash/c7bf0b7c1a86d5eb3be2c722cf2cf746-Abstract.html](https://papers.nips.cc/paper/2020/hash/c7bf0b7c1a86d5eb3be2c722cf2cf746-Abstract.html)
+15. <a id="ref-15"></a>Breiman, L. (2001). *Random Forests*. Machine Learning, 45(1), 5–32. [https://doi.org/10.1023/A:1010933404324](https://doi.org/10.1023/A:1010933404324)
+16. <a id="ref-16"></a>Fisher, A., Rudin, C., & Dominici, F. (2019). *All Models Are Wrong, but Many Are Useful: Learning a Variable's Importance by Studying an Entire Class of Prediction Models Simultaneously*. Journal of Machine Learning Research, 20(177), 1–81.
+17. <a id="ref-17"></a>Strobl, C., Boulesteix, A.-L., Zeileis, A., & Hothorn, T. (2007). *Bias in Random Forest Variable Importance Measures: Illustrations, Sources and a Solution*. BMC Bioinformatics, 8, 25. [https://doi.org/10.1186/1471-2105-8-25](https://doi.org/10.1186/1471-2105-8-25)
+18. <a id="ref-18"></a>Strobl, C., Boulesteix, A.-L., Kneib, T., Augustin, T., & Zeileis, A. (2008). *Conditional Variable Importance for Random Forests*. BMC Bioinformatics, 9, 307. [https://doi.org/10.1186/1471-2105-9-307](https://doi.org/10.1186/1471-2105-9-307)
+19. <a id="ref-19"></a>Gregorutti, B., Michel, B., & Saint-Pierre, P. (2015). *Grouped Variable Importance with Random Forests and Application to Multiple Functional Data Analysis*. Computational Statistics & Data Analysis, 90, 15–35. [https://doi.org/10.1016/j.csda.2015.04.002](https://doi.org/10.1016/j.csda.2015.04.002)
+20. <a id="ref-20"></a>Lei, J., G'Sell, M., Rinaldo, A., Tibshirani, R. J., & Wasserman, L. (2018). *Distribution-Free Predictive Inference for Regression*. Journal of the American Statistical Association, 113(523), 1094–1111. [https://doi.org/10.1080/01621459.2017.1307116](https://doi.org/10.1080/01621459.2017.1307116)
+21. <a id="ref-21"></a>Molnar, C. (2025). *Interpretable Machine Learning* (3rd ed.), chapters on Permutation Feature Importance and LOFO. [https://christophm.github.io/interpretable-ml-book/](https://christophm.github.io/interpretable-ml-book/)
+22. <a id="ref-22"></a>Covert, I., Lundberg, S. M., & Lee, S.-I. (2020). *Understanding Global Feature Contributions With Additive Importance Measures*. Advances in Neural Information Processing Systems (NeurIPS) 33. [https://papers.nips.cc/paper/2020/hash/c7bf0b7c1a86d5eb3be2c722cf2cf746-Abstract.html](https://papers.nips.cc/paper/2020/hash/c7bf0b7c1a86d5eb3be2c722cf2cf746-Abstract.html)
 
 **Removal-based methods — change in a single prediction**
 
-23. Ribeiro, M. T., Singh, S., & Guestrin, C. (2016). *"Why Should I Trust You?": Explaining the Predictions of Any Classifier*. Proceedings of the 22nd ACM SIGKDD Conference on Knowledge Discovery and Data Mining. [https://arxiv.org/abs/1602.04938](https://arxiv.org/abs/1602.04938)
-24. Ribeiro, M. T., Singh, S., & Guestrin, C. (2018). *Anchors: High-Precision Model-Agnostic Explanations*. Proceedings of the AAAI Conference on Artificial Intelligence, 32(1).
-25. Štrumbelj, E., & Kononenko, I. (2010). *An Efficient Explanation of Individual Classifications Using Game Theory*. Journal of Machine Learning Research, 11, 1–18.
-26. Štrumbelj, E., & Kononenko, I. (2014). *Explaining Prediction Models and Individual Predictions with Feature Contributions*. Knowledge and Information Systems, 41(3), 647–665. [https://doi.org/10.1007/s10115-013-0679-x](https://doi.org/10.1007/s10115-013-0679-x)
-27. Lundberg, S. M., & Lee, S.-I. (2017). *A Unified Approach to Interpreting Model Predictions*. Advances in Neural Information Processing Systems (NeurIPS) 30. [https://arxiv.org/abs/1705.07874](https://arxiv.org/abs/1705.07874)
-28. Jethani, N., Sudarshan, M., Covert, I., Lee, S.-I., & Ranganath, R. (2022). *FastSHAP: Real-Time Shapley Value Estimation*. International Conference on Learning Representations (ICLR). [https://arxiv.org/abs/2107.07436](https://arxiv.org/abs/2107.07436)
+23. <a id="ref-23"></a>Ribeiro, M. T., Singh, S., & Guestrin, C. (2016). *"Why Should I Trust You?": Explaining the Predictions of Any Classifier*. Proceedings of the 22nd ACM SIGKDD Conference on Knowledge Discovery and Data Mining. [https://arxiv.org/abs/1602.04938](https://arxiv.org/abs/1602.04938)
+24. <a id="ref-24"></a>Ribeiro, M. T., Singh, S., & Guestrin, C. (2018). *Anchors: High-Precision Model-Agnostic Explanations*. Proceedings of the AAAI Conference on Artificial Intelligence, 32(1).
+25. <a id="ref-25"></a>Štrumbelj, E., & Kononenko, I. (2010). *An Efficient Explanation of Individual Classifications Using Game Theory*. Journal of Machine Learning Research, 11, 1–18.
+26. <a id="ref-26"></a>Štrumbelj, E., & Kononenko, I. (2014). *Explaining Prediction Models and Individual Predictions with Feature Contributions*. Knowledge and Information Systems, 41(3), 647–665. [https://doi.org/10.1007/s10115-013-0679-x](https://doi.org/10.1007/s10115-013-0679-x)
+27. <a id="ref-27"></a>Lundberg, S. M., & Lee, S.-I. (2017). *A Unified Approach to Interpreting Model Predictions*. Advances in Neural Information Processing Systems (NeurIPS) 30. [https://arxiv.org/abs/1705.07874](https://arxiv.org/abs/1705.07874)
+28. <a id="ref-28"></a>Jethani, N., Sudarshan, M., Covert, I., Lee, S.-I., & Ranganath, R. (2022). *FastSHAP: Real-Time Shapley Value Estimation*. International Conference on Learning Representations (ICLR). [https://arxiv.org/abs/2107.07436](https://arxiv.org/abs/2107.07436)
 
 **Model-specific methods (out of scope)**
 
-29. Lundberg, S. M., Erion, G., Chen, H., DeGrave, A., Prutkin, J. M., Nair, B., Katz, R., Himmelfarb, J., Bansal, N., & Lee, S.-I. (2020). *From Local Explanations to Global Understanding with Explainable AI for Trees*. Nature Machine Intelligence, 2, 56–67. [https://doi.org/10.1038/s42256-019-0138-9](https://doi.org/10.1038/s42256-019-0138-9)
-30. Sundararajan, M., Taly, A., & Yan, Q. (2017). *Axiomatic Attribution for Deep Networks*. International Conference on Machine Learning (ICML). [https://arxiv.org/abs/1703.01365](https://arxiv.org/abs/1703.01365)
-31. Bach, S., Binder, A., Montavon, G., Klauschen, F., Müller, K.-R., & Samek, W. (2015). *On Pixel-Wise Explanations for Non-Linear Classifier Decisions by Layer-Wise Relevance Propagation*. PLoS ONE, 10(7), e0130140. [https://doi.org/10.1371/journal.pone.0130140](https://doi.org/10.1371/journal.pone.0130140)
-32. Shrikumar, A., Greenside, P., & Kundaje, A. (2017). *Learning Important Features Through Propagating Activation Differences*. International Conference on Machine Learning (ICML). [https://arxiv.org/abs/1704.02685](https://arxiv.org/abs/1704.02685)
-33. Erion, G., Janizek, J. D., Sturmfels, P., Lundberg, S. M., & Lee, S.-I. (2021). *Improving Performance of Deep Learning Models with Axiomatic Attribution Priors and Expected Gradients*. Nature Machine Intelligence, 3, 620–631. [https://arxiv.org/abs/1906.10670](https://arxiv.org/abs/1906.10670)
+29. <a id="ref-29"></a>Lundberg, S. M., Erion, G., Chen, H., DeGrave, A., Prutkin, J. M., Nair, B., Katz, R., Himmelfarb, J., Bansal, N., & Lee, S.-I. (2020). *From Local Explanations to Global Understanding with Explainable AI for Trees*. Nature Machine Intelligence, 2, 56–67. [https://doi.org/10.1038/s42256-019-0138-9](https://doi.org/10.1038/s42256-019-0138-9)
+30. <a id="ref-30"></a>Sundararajan, M., Taly, A., & Yan, Q. (2017). *Axiomatic Attribution for Deep Networks*. International Conference on Machine Learning (ICML). [https://arxiv.org/abs/1703.01365](https://arxiv.org/abs/1703.01365)
+31. <a id="ref-31"></a>Bach, S., Binder, A., Montavon, G., Klauschen, F., Müller, K.-R., & Samek, W. (2015). *On Pixel-Wise Explanations for Non-Linear Classifier Decisions by Layer-Wise Relevance Propagation*. PLoS ONE, 10(7), e0130140. [https://doi.org/10.1371/journal.pone.0130140](https://doi.org/10.1371/journal.pone.0130140)
+32. <a id="ref-32"></a>Shrikumar, A., Greenside, P., & Kundaje, A. (2017). *Learning Important Features Through Propagating Activation Differences*. International Conference on Machine Learning (ICML). [https://arxiv.org/abs/1704.02685](https://arxiv.org/abs/1704.02685)
+33. <a id="ref-33"></a>Erion, G., Janizek, J. D., Sturmfels, P., Lundberg, S. M., & Lee, S.-I. (2021). *Improving Performance of Deep Learning Models with Axiomatic Attribution Priors and Expected Gradients*. Nature Machine Intelligence, 3, 620–631. [https://arxiv.org/abs/1906.10670](https://arxiv.org/abs/1906.10670)
 
 ### Other sections (not yet organized)
 
 References already cited later in the post (FastSHAP's alternatives, Selective Explanations, multicollinearity, surrogate models), listed here as a placeholder until those sections get the same treatment:
 
-34. Paes, L. M., Wei, D., & Calmon, F. P. (2024). *Selective Explanations*. arXiv:2405.19562. [https://arxiv.org/abs/2405.19562](https://arxiv.org/abs/2405.19562)
-35. Jullum, M., Redelmeier, A., & Aas, K. (2021). *groupShapley: Efficient Prediction Explanation with Shapley Values for Feature Groups*. Norwegian Computing Center, SAMBA/20/21. [https://arxiv.org/abs/2106.12228](https://arxiv.org/abs/2106.12228)
-36. Kennedy, W. B. (2022). *Create Stronger Decision Trees with Bootstrapping and Genetic Algorithms*. Towards Data Science. [https://github.com/Brett-Kennedy/GeneticDecisionTree](https://github.com/Brett-Kennedy/GeneticDecisionTree)
-37. Hu, X., Rudin, C., & Seltzer, M. (2019). *Optimal Sparse Decision Trees*. arXiv:1904.12847. [https://arxiv.org/abs/1904.12847](https://arxiv.org/abs/1904.12847)
+34. <a id="ref-34"></a>Paes, L. M., Wei, D., & Calmon, F. P. (2024). *Selective Explanations*. arXiv:2405.19562. [https://arxiv.org/abs/2405.19562](https://arxiv.org/abs/2405.19562)
+35. <a id="ref-35"></a>Jullum, M., Redelmeier, A., & Aas, K. (2021). *groupShapley: Efficient Prediction Explanation with Shapley Values for Feature Groups*. Norwegian Computing Center, SAMBA/20/21. [https://arxiv.org/abs/2106.12228](https://arxiv.org/abs/2106.12228)
+36. <a id="ref-36"></a>Kennedy, W. B. (2022). *Create Stronger Decision Trees with Bootstrapping and Genetic Algorithms*. Towards Data Science. [https://github.com/Brett-Kennedy/GeneticDecisionTree](https://github.com/Brett-Kennedy/GeneticDecisionTree)
+37. <a id="ref-37"></a>Hu, X., Rudin, C., & Seltzer, M. (2019). *Optimal Sparse Decision Trees*. arXiv:1904.12847. [https://arxiv.org/abs/1904.12847](https://arxiv.org/abs/1904.12847)
