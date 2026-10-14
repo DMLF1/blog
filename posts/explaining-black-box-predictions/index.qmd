@@ -181,33 +181,54 @@ The two answer different questions. SHAP explains individual predictions: it sho
 
 ## Cutting the per-sample cost: FastSHAP
 
-The most efficient class of methods sidesteps per-sample computation
-entirely by *amortising* it: train a parametric function once, up front,
-that maps any input directly to its Shapley values in a single forward
-pass. The current state of the art here is **FastSHAP** [(Jethani et al. 2022)](#ref-28).
+The most efficient class of methods sidesteps per-sample computation entirely by *amortising* it: train a parametric function once, up front, that maps any input directly to its Shapley values in a single forward pass. The current state of the art is **FastSHAP** [(Jethani et al. 2022)](#ref-28).
 
 ::: {.column-page}
 ![FastSHAP samples too — it isn't skipped, just moved. Both lanes start the same way: sample feature subsets S. Classic SHAP (left) then averages the model's output over background samples for every explanation — the expensive step. FastSHAP (right) replaces that averaging with a learned surrogate, trained once upfront alongside the explainer network; at explanation time, that whole training phase is a no-op, and a single forward pass produces the estimate. Both lanes' final outputs are drawn level, to compare what each one actually costs per explanation.](diagrams/classic-vs-fastshap.drawio.svg){#fig-fastshap}
 :::
 
-@fig-fastshap shows the shift. FastSHAP trains two surrogates instead of
-running Monte Carlo sampling per sample:
+@fig-fastshap shows the shift: instead of running Monte Carlo sampling for each input, FastSHAP trains two models, an explainer that outputs the Shapley values and a surrogate that handles missing features.
 
-1. **A surrogate for the value function itself.** Rather than solving a
-   separate optimisation problem per feature per sample, it learns the
-   Shapley value function across many training points at once, using
-   similar samples to interpolate and extrapolate — an explicit sample-
-   efficiency trade.
-2. **A surrogate for "what happens with missing features."** Instead of
-   averaging the prediction over many background samples per subset (the
-   expensive part of classic SHAP), it needs a single prediction per
-   evaluation. The explanation it produces reflects the model's
-   *information* dependence on a feature rather than its raw algebraic
-   dependence.
+**The explainer.** FastSHAP starts from an alternative characterisation of Shapley values [(Charnes et al. 1988)](#ref-39). For a fixed input, they are the coefficients of the additive model that best reproduces the predictions on every combination of features, weighted by the Shapley kernel:
 
-The catch: once trained, FastSHAP can't guarantee accuracy for any single
-feature the way a heavy Monte Carlo estimate can. It's a real trade of
-per-feature guarantees for tractability.
+$$
+\varphi(x) = \arg\min_{\phi \in \mathbb{R}^{|F|}} \; \mathbb{E}_{S \sim p_{\text{Sh}}} \Big[ \big( f_S(x_S) - f_\varnothing - \textstyle\sum_{j \in S} \phi_j \big)^2 \Big]
+\quad \text{s.t.} \quad \textstyle\sum_{j \in F} \phi_j = f(x) - f_\varnothing
+$$
+
+$$
+p_{\text{Sh}}(S) \propto \frac{|F| - 1}{\binom{|F|}{|S|}\, |S|\, \big(|F| - |S|\big)}, \qquad 0 < |S| < |F|
+$$
+
+> **Notation.** $\phi$ is a candidate vector of Shapley values, one per feature; $p_{\text{Sh}}$ is the Shapley kernel, the distribution over combinations $S$ that makes the solution equal the Shapley values; $f_S$, $f_\varnothing$ and $F$ are as in the previous section.
+
+KernelSHAP solves this problem separately for every input, from sampled combinations. FastSHAP instead trains one network $\phi_\theta(x)$ to solve it for all inputs at once, by minimising the same objective averaged over the data:
+
+$$
+\mathcal{L}(\theta) = \mathbb{E}_{X}\, \mathbb{E}_{S \sim p_{\text{Sh}}} \Big[ \big( f_S(X_S) - f_\varnothing - \textstyle\sum_{j \in S} \phi_\theta(X)_j \big)^2 \Big]
+$$
+
+> **Notation.** $\phi_\theta(x) \in \mathbb{R}^{|F|}$ is the explainer network's output for input $x$, with weights $\theta$; $\phi_\theta(x)_j$ is its estimate for feature $j$; $X$ is an input drawn from the training data.
+
+No ground-truth Shapley values are needed: each training step samples an input and a combination, and the error of the additive fit is the training signal. If the network is expressive enough, the data large enough and the optimisation perfect, the minimiser outputs the exact Shapley values for every input.
+
+**The surrogate.** Each evaluation of $f_S$ in the loss would normally average the model over $m$ background samples, the expensive part of classic SHAP. FastSHAP replaces this average with a second network $g_\beta$, which sees an input with the features outside $S$ masked out and is trained to reproduce the model's prediction on the full input:
+
+$$
+\mathcal{L}(\beta) = \mathbb{E}_{X}\, \mathbb{E}_{S} \Big[ D_{\mathrm{KL}}\big( f(X) \,\big\|\, g_\beta(\mathrm{mask}(X, S)) \big) \Big]
+$$
+
+> **Notation.** $g_\beta$ is the surrogate network, with weights $\beta$; $\mathrm{mask}(x, S)$ replaces the features outside $S$ with a mask token; $D_{\mathrm{KL}}$ is the Kullback–Leibler divergence between the model's and the surrogate's predicted class probabilities.
+
+Minimising this KL divergence drives the surrogate to output the model's prediction averaged over the missing features, given the visible ones [(Covert et al. 2021)](#ref-7):
+
+$$
+g_{\beta^*}\big(\mathrm{mask}(x, S)\big) = \int f\big(x_S,\, x_{\bar S}\big)\, p\big(x_{\bar S} \mid x_S\big)\, dx_{\bar S} = f_S(x_S)
+$$
+
+This is the conditional choice of $q$ from the previous section, learned instead of sampled. Each evaluation of $f_S$ now costs one forward pass instead of $m$, and the resulting explanations reflect the information each feature carries rather than how the model's formula uses it.
+
+**The catch.** One set of weights $\theta$ produces the values for every input and every feature, and it is trained to minimise the error averaged over the data. The accuracy of any single explanation therefore depends on how well the network generalises, not on how much computation is spent on that input. A Monte Carlo estimate can always be tightened by drawing more samples for the input in question; a FastSHAP estimate cannot, and its error for a given feature on a given input is not bounded. The surrogate adds a second layer of approximation on top. In return, [Jethani et al. (2022)](#ref-28) report that FastSHAP's single forward pass matches the accuracy that sampling estimators reach only after 200 to 2,000 model evaluations.
 
 ## Paying for accuracy only where it's needed: Selective Explanations
 
@@ -444,3 +465,4 @@ References already cited later in the post (FastSHAP's alternatives, Selective E
 36. <a id="ref-36"></a>Kennedy, W. B. (2022). *Create Stronger Decision Trees with Bootstrapping and Genetic Algorithms*. Towards Data Science. [https://github.com/Brett-Kennedy/GeneticDecisionTree](https://github.com/Brett-Kennedy/GeneticDecisionTree)
 37. <a id="ref-37"></a>Hu, X., Rudin, C., & Seltzer, M. (2019). *Optimal Sparse Decision Trees*. arXiv:1904.12847. [https://arxiv.org/abs/1904.12847](https://arxiv.org/abs/1904.12847)
 38. <a id="ref-38"></a>Shapley, L. S. (1953). *A Value for n-Person Games*. In *Contributions to the Theory of Games II* (Annals of Mathematics Studies 28), Princeton University Press, 307–317. [https://doi.org/10.1515/9781400881970-018](https://doi.org/10.1515/9781400881970-018)
+39. <a id="ref-39"></a>Charnes, A., Golany, B., Keane, M., & Rousseau, J. (1988). *Extremal Principle Solutions of Games in Characteristic Function Form: Core, Chebychev and Shapley Value Generalizations*. In *Econometrics of Planning and Efficiency*, Springer, 123–133. [https://doi.org/10.1007/978-94-009-3677-5_7](https://doi.org/10.1007/978-94-009-3677-5_7)
