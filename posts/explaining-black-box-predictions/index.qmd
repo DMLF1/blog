@@ -90,7 +90,7 @@ Model-specific methods read importance from a model's internals instead of probi
 
 These methods trade generality for speed and, for TreeSHAP, freedom from sampling error. They don't escape the correlation problem: most fill off features from background samples, as marginal sampling does, path-dependent TreeSHAP only roughly approximates conditional sampling, and none supports grouping natively. Each also works only for its model family.
 
-## Shapley Values, and why exact SHAP doesn't scale
+## Shapley values, and why exact SHAP doesn't scale
 
 SHAP [(Lundberg and Lee 2017)](#ref-2) casts feature attribution as the Shapley value from cooperative game theory, and shows that earlier methods such as LIME belong to the same family of additive attributions. For an input $x$, the Shapley value of feature $i$ is its average marginal contribution over all combinations of the other features:
 
@@ -98,9 +98,9 @@ $$
 \varphi_i = \sum_{S \subseteq F \setminus \{i\}} \frac{|S|!\,(|F| - |S| - 1)!}{|F|!} \left[ f_{S \cup \{i\}}(x_{S \cup \{i\}}) - f_S(x_S) \right]
 $$
 
-Each term measures how much adding feature $i$ to one combination of the other features changes the prediction, and the Shapley value is the weighted average over every possible combination. There are $2^{|F|-1}$ combinations, and in the original formulation each one requires retraining the model on that subset. With hundreds of features, exact computation is intractable.
+Each term measures how much adding feature $i$ to one combination of the other features changes the prediction, and the Shapley value is the weighted average over every possible combination. There are $2^{|F|-1}$ combinations, and in the original formulation each one requires retraining the model on that subset. With hundreds of features, exact computation is impossible.
 
-Sampling estimators make it practical: they sample combinations instead of enumerating them, and fill missing features with background samples instead of retraining [(Aas et al. 2021)](#ref-5). Each explanation still costs many model evaluations, and because missing features are filled independently, the estimates become unreliable under strong correlation. KernelSHAP needs fewer evaluations but still samples. TreeSHAP avoids sampling for tree ensembles, computing exact values by traversing the trees, at a cost that grows with the number of trees, their leaves and the square of their depth [(Lundberg et al. 2020)](#ref-29).
+Sampling estimators make it practical: they sample combinations instead of enumerating them, and fill missing features with background samples instead of retraining [(Aas et al. 2021)](#ref-5). Each explanation still costs many model evaluations, and because missing features are filled independently, the estimates become unreliable under strong correlation. KernelSHAP needs fewer evaluations but still samples. TreeSHAP avoids sampling altogether for tree ensembles, computing exact values quickly by traversing the trees [(Lundberg et al. 2018)](#ref-1), but it works only for trees and inherits the same correlation problem.
 
 ## Cutting the per-sample cost: FastSHAP
 
