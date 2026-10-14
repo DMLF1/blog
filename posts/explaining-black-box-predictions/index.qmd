@@ -187,7 +187,7 @@ that maps any input directly to its Shapley values in a single forward
 pass. The current state of the art here is **FastSHAP** [(Jethani et al. 2022)](#ref-28).
 
 ::: {.column-page}
-![Where the two approaches spend their compute. Classic SHAP repeats the sampling process for every single prediction; FastSHAP moves that cost into training a surrogate model once.](diagrams/classic-vs-fastshap.drawio.svg){#fig-fastshap}
+![FastSHAP samples too — it isn't skipped, just moved. Classic SHAP repeats sampling and averaging for every explanation (top row). FastSHAP runs that identical step once, upfront, across many training inputs instead of one explanation (middle row) — then at explanation time (bottom row), that step is a no-op: already baked into the trained network, reused for every input instead of redone.](diagrams/classic-vs-fastshap.drawio.svg){#fig-fastshap}
 :::
 
 @fig-fastshap shows the shift. FastSHAP trains two surrogates instead of
