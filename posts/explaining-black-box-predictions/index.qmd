@@ -78,15 +78,17 @@ Compared with LIME, Shapley values answer a fixed question: estimators converge 
 
 ### Model-Specific Methods (OUT-OF-SCOPE)
 
-![Three ways of reading importance straight out of a model's own internals -- out of scope for this post.](diagrams/taxonomy_model_specific.drawio.svg){#fig-taxonomy-modelspecific}
+![Three ways of reading importance straight out of a model's own internals.](diagrams/taxonomy_model_specific.drawio.svg){#fig-taxonomy-modelspecific}
 
-Model-specific methods rely on a particular model's structure or internals, so each works for only one model family.
+Model-specific methods read importance from a model's internals instead of probing it from the outside.
 
-- **Embedded.** Importance is read straight from the model's own structure — linear coefficients, tree gain — no removal, no estimation, just a number the model already produced as a byproduct of fitting.
-- **Gradient- and propagation-based.** Integrated Gradients and LRP propagate a signal backward through a neural network's layers instead of treating it as a black box. The output is a generic attribution score, not a Shapley value.
-- **Model-specific SHAP.** TreeSHAP and the gradient-based SHAP variants exploit the same internals as the two groups above, but aimed at an actual Shapley value instead of a generic score. TreeSHAP gets it exactly, by walking the tree structure directly; DeepSHAP and GradientSHAP get it approximately, propagating through the network the same way Integrated Gradients and LRP do.
+- **Embedded.** Gain in tree ensembles comes free as a by-product of training. But it is computed on the training data, so it rewards overfitting; it favours features with many distinct values, gives no direction, and can drop when the model relies on a feature more.
+- **Gradient- and propagation-based.** These methods work backward through a neural network. Integrated Gradients averages gradients along a straight line from a reference input to the actual input, since a single gradient is zero wherever the model is flat; the scores sum to the change in prediction. LRP passes the output score itself backward, splitting it among each layer's inputs by their contribution, so the scores sum to the prediction.
+- **Model-specific SHAP.**
+  - **TreeSHAP** computes Shapley values exactly by walking the trees: at splits on features that are on, it follows the input's branch; at splits on features that are off, it follows both branches. With background data, it gives exact marginal values; without it, it uses the training counts stored in the tree as a rough stand-in for conditional sampling. Grouping isn't built in.
+  - **DeepSHAP and GradientSHAP** approximate Shapley values by running DeepLIFT or Integrated Gradients against many background samples instead of one reference, and averaging.
 
-Compared with the removal-based methods above, model-specific methods trade generality for speed — and, for TreeSHAP, exactness. Reading a model's own internals is far cheaper than treating it as a black box and probing it with perturbations, but the method only works for the one model family it was built for: swap in a different model type and you need a different explainer, or none at all. That's the trade this post doesn't make — everything covered above works the same way regardless of what's inside the model.
+These methods trade generality for speed and, for TreeSHAP, freedom from sampling error. They don't escape the correlation problem: most fill off features from background samples, as marginal sampling does, path-dependent TreeSHAP only roughly approximates conditional sampling, and none supports grouping natively. Each also works only for its model family.
 
 ## Shapley values, and why exact SHAP doesn't scale
 
