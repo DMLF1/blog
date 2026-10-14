@@ -26,7 +26,7 @@ Neither problem has a free fix, but both have good partial answers. The rest of 
 
 ## Explainability Landscape
 
-Explainability methods fall into 3 main families: surrogate methods, removal-based methods, and model-specific methods. This post covers the first two — model-agnostic removal-based methods and model surrogates.
+Explainability methods fall into 3 main families: surrogate methods, removal-based methods, and model-specific methods [@covert2021]. This post covers the first two — model-agnostic removal-based methods and model surrogates.
 
 ### Surrogate Methods
 
@@ -34,10 +34,10 @@ Explainability methods fall into 3 main families: surrogate methods, removal-bas
 
 Surrogate methods replace the black box with an interpretable model that imitates it, and read feature importance from that model instead. The resulting importance is only as reliable as the imitation. That imitation can target two different scopes: a **global surrogate** has to imitate the model everywhere, a **local surrogate** only has to imitate it around one prediction.
 
-- **Decision tree.** A shallow tree reproduces the model's predictions with just a few splits. Greedy deep trees are unstable, since small changes in the data can change the top splits, so stable surrogates need globally optimised shallow trees, such as evolutionary trees or optimal sparse trees.
-- **Rule list.** An ordered set of if-then rules, learned for example with RuleFit or Bayesian Rule Lists. Importance follows from which features appear in the rules and how much of the data each rule covers.
-- **Additive models.** The prediction is modelled as a sum of separate curves, one per feature, sometimes with a few pairwise interactions, as in Explainable Boosting Machines. Each curve shows how its feature moves the prediction, and the curve's average absolute value across the data measures how much the feature matters.
-- **Local surrogate.** Instead of covering the whole input space, a local surrogate only needs to hold near one instance. **Anchors** searches for a small set of conditions on a few features — an if-then rule — under which the model's prediction stays the same for almost any value of the other features, found by perturbing the input and checking how often the rule still holds across the perturbations. The output isn't a magnitude or a direction like the surrogates above; it's just which conditions hold and how reliably they pin the prediction down.
+- **Decision tree.** A shallow tree reproduces the model's predictions with just a few splits. Greedy deep trees are unstable, since small changes in the data can change the top splits, so stable surrogates need globally optimised shallow trees, such as evolutionary trees [@grubinger2014] or optimal sparse trees [@lin2020].
+- **Rule list.** An ordered set of if-then rules, learned for example with RuleFit [@friedman2008] or Bayesian Rule Lists [@letham2015]. Importance follows from which features appear in the rules and how much of the data each rule covers.
+- **Additive models.** The prediction is modelled as a sum of separate curves, one per feature, sometimes with a few pairwise interactions, as in Explainable Boosting Machines [@lou2013]. Each curve shows how its feature moves the prediction, and the curve's average absolute value across the data measures how much the feature matters.
+- **Local surrogate.** Instead of covering the whole input space, a local surrogate only needs to hold near one instance. **Anchors** [@ribeiro2018] searches for a small set of conditions on a few features — an if-then rule — under which the model's prediction stays the same for almost any value of the other features, found by perturbing the input and checking how often the rule still holds across the perturbations. The output isn't a magnitude or a direction like the surrogates above; it's just which conditions hold and how reliably they pin the prediction down.
 
 Surrogates are appealing, but they often struggle to keep up with high-performing models. With hundreds of features, a shallow tree or a short rule list can use only a handful of them. A plain GAM scales to many features but has no interactions; an EBM adds pairwise ones, but only a small fraction of the possible pairs, and every pair it adds makes the surrogate harder to read. The surrogate can then fit the model poorly, and its importances describe the surrogate rather than the model. A local surrogate like Anchors sidesteps that scaling problem entirely, since it only ever has to explain one neighbourhood — at the cost of giving up any global view of the model.
 
@@ -51,11 +51,11 @@ Removal-based methods simulate removing features, typically by replacing them wi
 
 These methods need true labels and give only **GLOBAL** scores with **NO DIRECTION**.
 
-- **Permutation-based.** Permutation importance shuffles one feature's column and measures how much the error grows. If two features interact, shuffling either one destroys the whole interaction, so each gets full credit for it. With correlated features, it also creates unrealistic rows.
-    - Conditional permutation importance avoids this by shuffling a feature only among rows with similar values of its correlated features
-    - Grouped permutation importance shuffles correlated features together, which keeps rows realistic but gives one score for the whole group
-- **Retraining-based.** Drop-column importance retrains the model without a feature and measures how much the error grows; LOCO adds confidence intervals to the same idea. Because a new model is trained each time, correlated features can stand in for each other: dropping either one costs little, so both features score near zero even if the original model relied on them. This is by far the most computationally costly approach.
-- **Shapley-based.** SAGE applies Shapley values to the model's error, so the feature scores add up to the model's total error reduction. An interaction's effect is split between the features involved instead of being counted in full for each.
+- **Permutation-based.** Permutation importance [@breiman2001] shuffles one feature's column and measures how much the error grows. If two features interact, shuffling either one destroys the whole interaction, so each gets full credit for it. With correlated features, it also creates unrealistic rows.
+    - Conditional permutation importance [@strobl2008] avoids this by shuffling a feature only among rows with similar values of its correlated features
+    - Grouped permutation importance [@gregorutti2015] shuffles correlated features together, which keeps rows realistic but gives one score for the whole group
+- **Retraining-based.** Drop-column importance retrains the model without a feature and measures how much the error grows; LOCO [@lei2018] adds confidence intervals to the same idea. Because a new model is trained each time, correlated features can stand in for each other: dropping either one costs little, so both features score near zero even if the original model relied on them. This is by far the most computationally costly approach.
+- **Shapley-based.** SAGE [@covert2020sage] applies Shapley values to the model's error, so the feature scores add up to the model's total error reduction. An interaction's effect is split between the features involved instead of being counted in full for each.
 
 In practice, drop-column importance and LOCO are too expensive for models with hundreds of features, which leaves permutation importance and SAGE. The difference between them is interactions. When the model combines two features, say approving a loan only if income is high and debt is low, shuffling either one breaks the combination, so permutation importance gives each feature the full effect and counts it twice. SAGE averages each feature's effect over all subsets of the others, so the effect is split between the features and the scores add up to the model's actual performance.
 
@@ -65,14 +65,14 @@ In practice, drop-column importance and LOCO are too expensive for models with h
 
 How one prediction changes without a feature.
 
-- **Local approximation.** LIME evaluates the model on many perturbed copies of one input, each resampling every feature independently from the training data and so ignoring correlations, then fits a linear model weighted by closeness to the input. Its coefficients are an averaged local slope: signed sensitivities that shift with the neighbourhood size and the samples, and don't sum to the prediction.
+- **Local approximation.** LIME [@ribeiro2016] evaluates the model on many perturbed copies of one input, each resampling every feature independently from the training data and so ignoring correlations, then fits a linear model weighted by closeness to the input. Its coefficients are an averaged local slope: signed sensitivities that shift with the neighbourhood size and the samples, and don't sum to the prediction.
 - **Shapley values** have a fixed target with guarantees: contributions sum to the prediction minus the average prediction, and a feature's value never drops when its contribution grows. Exact computation is intractable; the estimators below target the same values and differ in where the cost goes.
-  - **Averaging.** Štrumbelj & Kononenko sample combinations of the other features and average the prediction difference with and without the feature, drawing off features from their marginals. The estimate is exact in the limit, but every explanation needs fresh model calls.
-  - **Regression.** KernelSHAP fits one weighted regression on sampled combinations whose coefficients are the Shapley values, exactly so with all combinations. Each call informs every feature, so it usually needs fewer calls.
-  - **Amortised.** FastSHAP trains a network once, with KernelSHAP's objective, to output all Shapley values for any input. Each explanation becomes one forward pass; accuracy depends on training.
+  - **Averaging.** Štrumbelj & Kononenko [@strumbelj2010; @strumbelj2014] sample combinations of the other features and average the prediction difference with and without the feature, drawing off features from their marginals. The estimate is exact in the limit, but every explanation needs fresh model calls.
+  - **Regression.** KernelSHAP [@lundberg2017] fits one weighted regression on sampled combinations whose coefficients are the Shapley values, exactly so with all combinations. Each call informs every feature, so it usually needs fewer calls.
+  - **Amortised.** FastSHAP [@jethani2022] trains a network once, with KernelSHAP's objective, to output all Shapley values for any input. Each explanation becomes one forward pass; accuracy depends on training.
   - **Beyond marginal sampling.** Marginal draws create unrealistic inputs. Two alternatives:
-    - **Conditional.** Off features are drawn given the on ones, for example via a Gaussian copula (Aas et al.). Inputs stay realistic, but credit follows correlations: a feature the model ignores can take part of a correlated feature's credit, where marginal sampling gives it zero. It is also costlier.
-    - **Grouped.** A cluster of correlated features is switched on or off together. Inputs stay realistic and credit isn't split arbitrarily, but you get one value per group.
+    - **Conditional.** Off features are drawn given the on ones, for example via a Gaussian copula [@aas2021]. Inputs stay realistic, but credit follows correlations: a feature the model ignores can take part of a correlated feature's credit, where marginal sampling gives it zero. It is also costlier.
+    - **Grouped.** A cluster of correlated features is switched on or off together [@jullum2021]. Inputs stay realistic and credit isn't split arbitrarily, but you get one value per group.
 
 Compared with LIME, Shapley values answer a fixed question: estimators converge to the same numbers, while LIME's coefficients depend on its neighbourhood and samples. Contributions sum to the prediction, so they compare across features and average into global importances, and interactions are split by a principled rule. The cost is computation. On correlated features, both share the weakness of marginal sampling, which conditional or grouped sampling addresses for Shapley values.
 
@@ -82,11 +82,11 @@ Compared with LIME, Shapley values answer a fixed question: estimators converge 
 
 Model-specific methods read importance from a model's internals instead of probing it from the outside.
 
-- **Embedded.** Gain in tree ensembles comes free as a by-product of training. But it is computed on the training data, so it rewards overfitting; it favours features with many distinct values, gives no direction, and can drop when the model relies on a feature more.
-- **Gradient- and propagation-based.** These methods work backward through a neural network. Integrated Gradients averages gradients along a straight line from a reference input to the actual input, since a single gradient is zero wherever the model is flat; the scores sum to the change in prediction. LRP passes the output score itself backward, splitting it among each layer's inputs by their contribution, so the scores sum to the prediction.
+- **Embedded.** Gain in tree ensembles comes free as a by-product of training. But it is computed on the training data, so it rewards overfitting; it favours features with many distinct values, gives no direction, and can drop when the model relies on a feature more [@strobl2007].
+- **Gradient- and propagation-based.** These methods work backward through a neural network. Integrated Gradients [@sundararajan2017] averages gradients along a straight line from a reference input to the actual input, since a single gradient is zero wherever the model is flat; the scores sum to the change in prediction. LRP [@bach2015] passes the output score itself backward, splitting it among each layer's inputs by their contribution, so the scores sum to the prediction.
 - **Model-specific SHAP.**
-  - **TreeSHAP** computes Shapley values exactly by walking the trees: at splits on features that are on, it follows the input's branch; at splits on features that are off, it follows both branches. With background data, it gives exact marginal values; without it, it uses the training counts stored in the tree as a rough stand-in for conditional sampling. Grouping isn't built in.
-  - **DeepSHAP and GradientSHAP** approximate Shapley values by running DeepLIFT or Integrated Gradients against many background samples instead of one reference, and averaging.
+  - **TreeSHAP** [@lundberg2018] computes Shapley values exactly by walking the trees: at splits on features that are on, it follows the input's branch; at splits on features that are off, it follows both branches. With background data, it gives exact marginal values; without it, it uses the training counts stored in the tree as a rough stand-in for conditional sampling. Grouping isn't built in.
+  - **DeepSHAP** [@shrikumar2017] **and GradientSHAP** [@erion2021] approximate Shapley values by running DeepLIFT or Integrated Gradients against many background samples instead of one reference, and averaging.
 
 These methods trade generality for speed and, for TreeSHAP, freedom from sampling error. They don't escape the correlation problem: most fill off features from background samples, as marginal sampling does, path-dependent TreeSHAP only roughly approximates conditional sampling, and none supports grouping natively. Each also works only for its model family.
 
