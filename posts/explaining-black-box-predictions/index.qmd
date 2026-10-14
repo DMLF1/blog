@@ -2,7 +2,6 @@
 title: "Explaining Black-Box Predictions: SHAP and What Comes After"
 subtitle: "A tour of SHAP and its alternatives — and the two problems that make black-box explanation genuinely hard: scale and multicollinearity."
 date: 2026-10-13
-categories: [explainability, shapley-values, xgboost]
 bibliography: references.bib
 suppress-bibliography: true
 ---
@@ -45,7 +44,7 @@ Surrogates are appealing, but they often struggle to keep up with high-performin
 
 Removal-based methods simulate removing features, typically by replacing them with background values, and measure the effect. They differ in which effect they measure: model's global error, or a single prediction.
 
-#### Change in Error Methods
+#### **Change in Error Methods**
 
 ![Three ways to turn a dropped feature into a global importance score: shuffle it, retrain without it, or run Shapley values over the loss.](diagrams/taxonomy_removal_error.drawio.svg){#fig-taxonomy-removal-error}
 
@@ -57,17 +56,21 @@ These methods need true labels and give only **GLOBAL** scores with **NO DIRECTI
 - **Retraining-based.** Drop-column importance retrains the model without a feature and measures how much the error grows; LOCO adds confidence intervals to the same idea. Because a new model is trained each time, correlated features can stand in for each other: dropping either one costs little, so both features score near zero even if the original model relied on them. This is by far the most computationally costly approach.
 - **Shapley-based.** SAGE applies Shapley values to the model's error, so the feature scores add up to the model's total error reduction. An interaction's effect is split between the features involved instead of being counted in full for each.
 
-#### Change in a single prediction
+In practice, drop-column importance and LOCO are too expensive for models with hundreds of features, which leaves permutation importance and SAGE. The difference between them is interactions. When the model combines two features, say approving a loan only if income is high and debt is low, shuffling either one breaks the combination, so permutation importance gives each feature the full effect and counts it twice. SAGE averages each feature's effect over all subsets of the others, so the effect is split between the features and the scores add up to the model's actual performance.
+
+#### **Change in a Single Prediction Methods**
 
 ![Two ways to explain one prediction without a feature: fit a simple local model, or estimate that feature's Shapley value directly.](diagrams/taxonomy_removal_prediction.drawio.svg){#fig-taxonomy-removal-prediction}
 
 How one prediction changes without a feature.
 
-- **Local approximation.** To explain one prediction, these methods perturb the input to generate many nearby variations, then get the model's true prediction for each one — no retraining, just repeated evaluation of the existing black box. LIME weights each variation by how close it is to the original input, so nearby perturbations count more than distant ones, and fits a simple linear model through that weighted neighborhood; its coefficients become the signed, per-feature importances, though they shift with exactly which variations happened to get sampled. Anchors skips the weighted-regression step entirely and instead searches directly for an if-then rule — a small set of conditions on a few features — under which the model's prediction stays the same no matter what the other features do.
-- **Shapley values** add a well-defined target with guarantees, but exact computation is intractable, so they have to be estimated:
-  - **Sampling estimators** (e.g. Štrumbelj & Kononenko) sample combinations of the other features and average the prediction difference with and without the feature of interest, using Shapley weights.
-  - **Regression-based.** KernelSHAP fits LIME's weighted linear model, but with the weighting kernel and a constraint chosen specifically so the fitted coefficients come out equal to the Shapley values themselves, not just a loose local stand-in for them.
-  - **Amortized methods.** FastSHAP trains a neural network, once, to output Shapley values for any input in a single forward pass, so each new explanation costs almost nothing.
+- **Local approximation.** To explain one prediction, these methods perturb the input to generate many nearby variations, then get the model's true prediction for each one — no retraining, just repeated evaluation of the existing black box.
+  - **LIME** weights each variation by how close it is to the original input, so nearby perturbations count more than distant ones, and fits a simple linear model through that weighted neighborhood. Its coefficients become signed, per-feature numbers — but they shift with exactly which variations happened to get sampled, and unlike a Shapley value, they don't add up to anything in particular.
+  - **Anchors** skips the weighted-regression step entirely. Instead of a number per feature, it searches for a small set of conditions on a few features — an if-then rule — under which the model's prediction stays the same no matter what the other features do. The output isn't a magnitude or a direction, just which conditions hold and how reliably.
+- **Shapley values** add a well-defined target with guarantees — values sum exactly to the prediction, and a feature's share can't shrink if the model relies on it more — but exact computation is intractable, so they have to be estimated. All three estimators below target the *same* number; they differ only in where the cost goes.
+  - **Sampling estimators** (e.g. Štrumbelj & Kononenko) do the most literal thing: repeatedly sample a random subset of the other features, evaluate the model with and without the feature of interest added to it, and average the difference using the Shapley weights. Accurate given enough samples, but every single explanation needs a fresh batch of model evaluations.
+  - **Regression-based.** KernelSHAP reframes that same estimation as one weighted linear regression instead of many separate averaging steps. With the right weighting kernel and constraint, the regression's fitted coefficients come out *exactly* equal to the Shapley values — not an approximation of them, the same quantity LIME's regression only loosely resembles. Still needs a batch of samples per explanation, just fewer of them for the same accuracy.
+  - **Amortized methods.** FastSHAP moves the cost somewhere else entirely: train a neural network once, offline, to predict the full Shapley-value vector for any input directly. At explanation time there's no sampling and no regression — a single forward pass produces every feature's value together. The training cost is paid once upfront; each explanation after that is close to free.
 
 ### Model-specific methods (out of scope)
 
@@ -75,9 +78,9 @@ How one prediction changes without a feature.
 
 Model-specific methods rely on a particular model's structure or internals, so each works for only one model family.
 
-- **Embedded.** Importance is read directly from the model, such as linear coefficients or tree gain.
-- **TreeSHAP.** Exact Shapley values for tree ensembles, computed by exploiting their structure.
-- **Gradient- and propagation-based.** Integrated Gradients and LRP need a neural network's gradients or layers. DeepSHAP and GradientSHAP sit between this group and removal-based methods: they replace features with background values but compute contributions by propagating through the network.
+- **Embedded.** Importance is read directly from the model's own structure, such as linear coefficients or tree gain — no removal, no estimation, just reading a number the model already produced as a byproduct of fitting.
+- **Gradient- and propagation-based.** Integrated Gradients and LRP need direct access to a neural network's gradients or internal activations, propagating a signal backward through the layers rather than treating the model as a black box. The output is a generic attribution score, not a Shapley value.
+- **Model-specific SHAP.** TreeSHAP and the gradient-based SHAP variants use the same lever as the two groups above — exploit one specific model's internals — but to compute an actual Shapley value efficiently, not a different kind of signal. TreeSHAP gets exact Shapley values for tree ensembles by walking the tree structure directly. DeepSHAP and GradientSHAP get approximate ones the same way the gradient-based methods above do — by propagating through a neural network's layers — just aimed specifically at the Shapley value instead of a generic attribution score.
 
 ## Shapley values, and why exact SHAP doesn't scale
 
