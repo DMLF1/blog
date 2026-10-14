@@ -108,7 +108,7 @@ Sampling estimators make it practical: they sample combinations instead of enume
 ## Cutting the per-sample cost: FastSHAP
 
 The most efficient class of methods sidesteps per-sample computation
-entirely by *amortizing* it: train a parametric function once, up front,
+entirely by *amortising* it: train a parametric function once, up front,
 that maps any input directly to its Shapley values in a single forward
 pass. The current state of the art here is **FastSHAP** [(Jethani et al. 2022)](#ref-28).
 
@@ -120,7 +120,7 @@ pass. The current state of the art here is **FastSHAP** [(Jethani et al. 2022)](
 running Monte Carlo sampling per sample:
 
 1. **A surrogate for the value function itself.** Rather than solving a
-   separate optimization problem per feature per sample, it learns the
+   separate optimisation problem per feature per sample, it learns the
    Shapley value function across many training points at once, using
    similar samples to interpolate and extrapolate — an explicit sample-
    efficiency trade.
