@@ -240,17 +240,17 @@ $$
 \text{SE}(x, y) \;\triangleq\;
 \begin{cases}
 \text{Amor}(x, y) & \text{if } \tau_\alpha(x) = 1, \\[4pt]
-\lambda_h(x)\,\text{Amor}(x, y) + \big(1 - \lambda_h(x)\big)\,\text{MC}^n(x, y) & \text{if } \tau_\alpha(x) = 0,
+\lambda(x)\,\text{Amor}(x, y) + \big(1 - \lambda(x)\big)\,\text{MC}^n(x, y) & \text{if } \tau_\alpha(x) = 0,
 \end{cases}
 $$
 
-$\tau_\alpha(x) = \mathbb{1}\{s_h(x) \le t_\alpha\}$ compares the input's uncertainty score to a calibrated cutoff: 1 if the amortized estimate is trustworthy enough to use as-is, 0 otherwise. $\lambda_h(x)$ is a single blending weight per input, not per feature — the subscript $h$ refers to the model being explained — fitted per band of uncertainty on a calibration set. Two ways of defining the uncertainty score $s_h(x)$ are proposed:
+$\tau_\alpha(x) = \mathbb{1}\{s(x) \le t_\alpha\}$ compares the input's uncertainty score to a calibrated cutoff: 1 if the amortized estimate is trustworthy enough to use as-is, 0 otherwise. $\lambda(x)$ is a single blending weight per input, not per feature, fitted per band of uncertainty on a calibration set. Two ways of defining the uncertainty score $s(x)$ are proposed:
 
 **Deep uncertainty** — train several amortized networks with different
 random seeds and treat their disagreement as the uncertainty signal:
 
 $$
-s_h^{\text{Deep}}(x) \;\triangleq\; \frac{1}{dk}\sum_{i=1}^{d}
+s^{\text{Deep}}(x) \;\triangleq\; \frac{1}{dk}\sum_{i=1}^{d}
 \mathrm{Var}\Big(\text{Amor}^1(x)_i, \dots, \text{Amor}^k(x)_i\Big)
 $$
 
@@ -259,7 +259,7 @@ directly predict the expected gap between the amortized and Monte Carlo
 estimates:
 
 $$
-s_h^{\text{Learn}} \in \operatorname*{argmin}_{s \in \mathcal{F}}
+s^{\text{Learn}} \in \operatorname*{argmin}_{s \in \mathcal{F}}
 \sum_{(x,y) \in \mathcal{D}_{\text{train}}}
 \big| s(x) - \ell\big(\text{Amor}(x;y), \text{MC}^n(x;y)\big) \big|^2
 $$
