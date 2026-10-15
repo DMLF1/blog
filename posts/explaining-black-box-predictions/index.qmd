@@ -264,10 +264,17 @@ s^{\text{Learn}} \in \operatorname*{argmin}_{s \in \mathcal{F}}
 \big| s(x) - \ell\big(\text{Amor}(x;y), \text{MC}^n(x;y)\big) \big|^2
 $$
 
-This is the most intricate of the methods here — it needs both an
-uncertainty estimator and a calibrated threshold — but it's the only one
-that explicitly spends the expensive computation only where the cheap one
-is already known to be untrustworthy.
+Selective Explanations doesn't fix the multicollinearity problem discussed
+next: correlated features still get their joint contribution split
+unstably among themselves in either branch, since neither Amor nor the
+Monte Carlo estimator resolves that on its own. It also carries a subtler
+mismatch. Amor's surrogate is trained to match the conditional value
+function, but the Monte Carlo estimator typically uses marginal sampling
+by default. Blending the two with $\lambda(x)$ assumes they're estimating
+the same quantity, which can break down under correlated features. The
+paper proposes no conditional or grouped variant of Selective Explanations
+itself — a conditional or group-level fix would have to be applied to
+Amor and $\text{MC}^n$ separately, upstream, before blending.
 
 ## The multicollinearity problem
 
