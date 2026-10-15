@@ -1,5 +1,5 @@
 ---
-title: "Dmytro Iefremov"
+title: "Author: Dmytro I"
 about:
   template: jolla
   links:
