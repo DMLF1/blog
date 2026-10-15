@@ -270,11 +270,7 @@ unstably among themselves in either branch, since neither Amor nor the
 Monte Carlo estimator resolves that on its own. It also carries a subtler
 mismatch. Amor's surrogate is trained to match the conditional value
 function, but the Monte Carlo estimator typically uses marginal sampling
-by default. Blending the two with $\lambda(x)$ assumes they're estimating
-the same quantity, which can break down under correlated features. The
-paper proposes no conditional or grouped variant of Selective Explanations
-itself — a conditional or group-level fix would have to be applied to
-Amor and $\text{MC}^n$ separately, upstream, before blending.
+by default.
 
 ## The multicollinearity problem
 
