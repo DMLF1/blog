@@ -76,7 +76,7 @@ How one prediction changes without a feature.
 
 Compared with LIME, Shapley values answer a fixed question: estimators converge to the same numbers, while LIME's coefficients depend on its neighbourhood and samples. Contributions sum to the prediction, so they compare across features and average into global importances, and interactions are split by a principled rule. The cost is computation. On correlated features, both share the weakness of marginal sampling, which conditional or grouped sampling addresses for Shapley values.
 
-### Model-Specific Methods (OUT-OF-SCOPE)
+### Model-Specific Methods
 
 ![Three ways of reading importance straight out of a model's own internals.](diagrams/taxonomy_model_specific.drawio.svg){#fig-taxonomy-modelspecific}
 
@@ -183,7 +183,7 @@ The two answer different questions. SHAP explains individual predictions: it sho
 
 The most efficient class of methods sidesteps per-sample computation entirely by *amortising* it: train a parametric function once, up front, that maps any input directly to its Shapley values in a single forward pass. The current state of the art is **FastSHAP** [(Jethani et al. 2022)](#ref-27).
 
-::: {.column-page}
+::: {.column-body-outset}
 ![FastSHAP samples too — it isn't skipped, just moved. Both lanes start the same way: sample feature subsets S. Classic SHAP (left) then averages the model's output over background samples for every explanation — the expensive step. FastSHAP (right) replaces that averaging with a learned surrogate, trained once upfront alongside the explainer network; at explanation time, that whole training phase is a no-op, and a single forward pass produces the estimate. Both lanes' final outputs are drawn level, to compare what each one actually costs per explanation.](diagrams/classic-vs-fastshap.drawio.svg){#fig-fastshap}
 :::
 
@@ -320,7 +320,7 @@ $$
 
 The usual Shapley properties carry over to groups: group values sum to the prediction minus the average prediction, and equal contributions get equal credit. The cost also drops, from $2^{|F|-1}$ combinations per value to $2^{K-1}$: collapsing 50 features into 5 groups cuts the count from about $5.6 \times 10^{14}$ to 16.
 
-::: {.column-page}
+::: {.column-body-outset}
 ![The two responses to a correlated feature group, side by side. Per-feature Shapley splits the joint signal into several small, individually unstable numbers; groupShapley reports one number for the whole group instead.](diagrams/groupshapley.drawio.svg){#fig-groupshapley}
 :::
 
