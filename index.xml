@@ -9,8 +9,8 @@
 <link>https://dmlf1.github.io/blog/</link>
 <atom:link href="https://dmlf1.github.io/blog/index.xml" rel="self" type="application/rss+xml"/>
 <description>A technical blog about machine learning and data visualization.</description>
-<generator>quarto-1.10.18</generator>
-<lastBuildDate>Tue, 13 Oct 2026 07:00:00 GMT</lastBuildDate>
+<generator>quarto-1.10.19</generator>
+<lastBuildDate>Tue, 13 Oct 2026 00:00:00 GMT</lastBuildDate>
 <item>
   <title>Explaining Black-Box Predictions: SHAP and What Comes After</title>
   <link>https://dmlf1.github.io/blog/posts/explaining-black-box-predictions/</link>
@@ -329,7 +329,7 @@ Figure&nbsp;7: The two responses to a correlated feature group, side by side. Pe
 
  ]]></description>
   <guid>https://dmlf1.github.io/blog/posts/explaining-black-box-predictions/</guid>
-  <pubDate>Tue, 13 Oct 2026 07:00:00 GMT</pubDate>
+  <pubDate>Tue, 13 Oct 2026 00:00:00 GMT</pubDate>
 </item>
 </channel>
 </rss>
