@@ -236,12 +236,6 @@ This is the conditional choice of $q$ from the previous section, learned instead
 estimate where it's already trustworthy, and fall back to the slow but
 accurate Monte Carlo estimate everywhere else.
 
-::: {.column-page}
-![A per-input, per-feature decision: estimate how trustworthy the fast amortized estimate is, then either use it alone or blend it with the slow Monte Carlo estimate. Only the untrustworthy branch pays any of the Monte Carlo cost.](diagrams/selective_explanations.drawio.svg){#fig-selective}
-:::
-
-@fig-selective shows the decision this formula is making:
-
 $$
 \text{SE}(x, y) \;\triangleq\;
 \begin{cases}
@@ -250,9 +244,17 @@ $$
 \end{cases}
 $$
 
-where $\tau_\alpha$ is a threshold on an *uncertainty* measure and
-$\lambda_h$ is a feature-specific blending weight. Two ways of defining
-that uncertainty are proposed:
+$\tau_\alpha(x) = \mathbb{1}\{s_h(x) \le t_\alpha\}$ compares the input's uncertainty score $s_h(x)$ to a cutoff $t_\alpha$: 1 if the amortized estimate is trustworthy enough to use as-is, 0 if it isn't. The cutoff $t_\alpha$ is calibrated on held-out data so that inputs passing it meet a target reliability level $\alpha$ — a smaller $\alpha$ demands a stricter cutoff and routes more inputs to the blend below.
+
+$\lambda_h(x)$ is a single number per input, not per feature — every feature of $x$ gets the same blending weight. The subscript $h$ refers to the model being explained (the paper's own notation), not to a feature. It's piecewise constant: the uncertainty scores are split into bins, and every input whose score falls in bin $Q_i$ gets the same weight $\lambda_i$:
+
+$$
+\lambda_h(x) = \lambda_i \quad \text{if } s_h(x) \in Q_i
+$$
+
+Each $\lambda_i$ is fitted on the calibration set, by least squares, so that the blended explanation best matches a more accurate Monte Carlo reference $\text{MC}^{n'}$, with $n' > n$. The paper gives a closed-form solution.
+
+Two ways of defining the uncertainty score $s_h(x)$ are proposed:
 
 **Deep uncertainty** — train several amortized networks with different
 random seeds and treat their disagreement as the uncertainty signal:
