@@ -244,7 +244,7 @@ $$
 \end{cases}
 $$
 
-$\tau_\alpha(x) = \mathbb{1}\{s(x) \le t_\alpha\}$ compares the input's uncertainty score to a calibrated cutoff: 1 if the amortized estimate is trustworthy enough to use as-is, 0 otherwise. $\lambda(x)$ is a single blending weight per input, not per feature, fitted per band of uncertainty on a calibration set. Two ways of defining the uncertainty score $s(x)$ are proposed:
+$\tau_\alpha(x) = \mathbb{1}\{s(x) \le t_\alpha\}$ compares the input's uncertainty score to a calibrated cutoff: 1 if the amortized estimate is trustworthy enough to use as-is, 0 otherwise. $\lambda(x)$ is a blending weight fitted per band of uncertainty on a calibration set. Two ways of defining the uncertainty score $s(x)$ are proposed:
 
 **Deep uncertainty** — train several amortized networks with different
 random seeds and treat their disagreement as the uncertainty signal:
