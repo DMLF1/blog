@@ -2,7 +2,7 @@
 <html xmlns="http://www.w3.org/1999/xhtml" lang="en" xml:lang="en"><head>
 
 <meta charset="utf-8">
-<meta name="generator" content="quarto-1.10.19">
+<meta name="generator" content="quarto-1.10.18">
 
 <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
 
@@ -43,14 +43,14 @@ ul.task-list li input[type="checkbox"] {
 <script src="../../site_libs/quarto-html/tippy.umd.min.js"></script>
 <script src="../../site_libs/quarto-html/anchor.min.js"></script>
 <link href="../../site_libs/quarto-html/tippy.css" rel="stylesheet">
-<link href="../../site_libs/quarto-html/quarto-syntax-highlighting-5c1318cf63eba56dbef7ba16bc7d56f5.css" rel="stylesheet" class="quarto-color-scheme" id="quarto-text-highlighting-styles">
-<link href="../../site_libs/quarto-html/quarto-syntax-highlighting-dark-6453f418aeef366c23116eb9cb0b6816.css" rel="stylesheet" class="quarto-color-scheme quarto-color-alternate" id="quarto-text-highlighting-styles">
-<link href="../../site_libs/quarto-html/quarto-syntax-highlighting-5c1318cf63eba56dbef7ba16bc7d56f5.css" rel="stylesheet" class="quarto-color-scheme-extra" id="quarto-text-highlighting-styles">
+<link href="../../site_libs/quarto-html/quarto-syntax-highlighting-bb62276ab45c84d9efd712f51ff97b5a.css" rel="stylesheet" class="quarto-color-scheme" id="quarto-text-highlighting-styles">
+<link href="../../site_libs/quarto-html/quarto-syntax-highlighting-dark-5a1953863e1f72ef3b996ef827f01ca7.css" rel="stylesheet" class="quarto-color-scheme quarto-color-alternate" id="quarto-text-highlighting-styles">
+<link href="../../site_libs/quarto-html/quarto-syntax-highlighting-bb62276ab45c84d9efd712f51ff97b5a.css" rel="stylesheet" class="quarto-color-scheme-extra" id="quarto-text-highlighting-styles">
 <script src="../../site_libs/bootstrap/bootstrap.min.js"></script>
 <link href="../../site_libs/bootstrap/bootstrap-icons.css" rel="stylesheet">
-<link href="../../site_libs/bootstrap/bootstrap-777f8f80b6d111307de4b6a73fc2a2e0.min.css" rel="stylesheet" append-hash="true" class="quarto-color-scheme" id="quarto-bootstrap" data-mode="light">
-<link href="../../site_libs/bootstrap/bootstrap-dark-0db609373fa273c4ad19e32199cfe5bd.min.css" rel="stylesheet" append-hash="true" class="quarto-color-scheme quarto-color-alternate" id="quarto-bootstrap" data-mode="dark">
-<link href="../../site_libs/bootstrap/bootstrap-777f8f80b6d111307de4b6a73fc2a2e0.min.css" rel="stylesheet" append-hash="true" class="quarto-color-scheme-extra" id="quarto-bootstrap" data-mode="light">
+<link href="../../site_libs/bootstrap/bootstrap-32dbd2e7a0ea03348f8f0160de0e4df6.min.css" rel="stylesheet" append-hash="true" class="quarto-color-scheme" id="quarto-bootstrap" data-mode="light">
+<link href="../../site_libs/bootstrap/bootstrap-dark-c941d5f7e9be9edf75435d728ce1626f.min.css" rel="stylesheet" append-hash="true" class="quarto-color-scheme quarto-color-alternate" id="quarto-bootstrap" data-mode="dark">
+<link href="../../site_libs/bootstrap/bootstrap-32dbd2e7a0ea03348f8f0160de0e4df6.min.css" rel="stylesheet" append-hash="true" class="quarto-color-scheme-extra" id="quarto-bootstrap" data-mode="light">
 <script src="../../site_libs/quarto-contrib/glightbox/glightbox.min.js"></script>
 <link href="../../site_libs/quarto-contrib/glightbox/glightbox.min.css" rel="stylesheet">
 <link href="../../site_libs/quarto-contrib/glightbox/lightbox.css" rel="stylesheet">
@@ -497,13 +497,6 @@ Figure&nbsp;4: Three ways of reading importance straight out of a model’s own 
 </section>
 <section id="shapley-values-and-why-exact-shap-doesnt-scale" class="level2">
 <h2 class="anchored" data-anchor-id="shapley-values-and-why-exact-shap-doesnt-scale">Shapley Values, and why exact SHAP doesn’t scale</h2>
-<p>Of the methods surveyed above, Shapley values are the one every other removal-based and model-specific approach either implements, approximates, or gets compared against — so it’s worth seeing exactly how they’re defined and where their cost comes from. SHAP <a href="#ref-2">(Lundberg and Lee 2017)</a> brings the Shapley value from cooperative game theory <a href="#ref-29">(Shapley 1953)</a> to feature attribution, and shows that earlier methods such as LIME belong to the same family of additive attributions. For an input <span class="math inline">\(x\)</span>, the Shapley value of feature <span class="math inline">\(i\)</span> is</p>
-<p><span class="math display">\[
-\varphi_i(x) = \sum_{S \subseteq F \setminus \{i\}} \frac{|S|!\,(|F| - |S| - 1)!}{|F|!} \big[ f_{S \cup \{i\}}(x_{S \cup \{i\}}) - f_S(x_S) \big]
-\]</span></p>
-<blockquote class="blockquote">
-<p><strong>Notation.</strong> <span class="math inline">\(x\)</span> is the input being explained; <span class="math inline">\(F\)</span> is the set of all features and <span class="math inline">\(|F|\)</span> their number; <span class="math inline">\(S\)</span> is a combination of the other features; <span class="math inline">\(x_S\)</span> are the input’s values for the features in <span class="math inline">\(S\)</span>; <span class="math inline">\(f_S\)</span> is a model that uses only the features in <span class="math inline">\(S\)</span>.</p>
-</blockquote>
 <div id="fig-shapley-sampling" class="quarto-float quarto-figure quarto-figure-center anchored">
 <figure class="quarto-float quarto-float-fig figure">
 <div aria-describedby="fig-shapley-sampling-caption-0ceaefa1-69ba-4598-a22c-09a6ac19f8ca">
@@ -514,7 +507,17 @@ Figure&nbsp;5: Every one of the 8 subsets of the other features is its own term 
 </figcaption>
 </figure>
 </div>
-<p>The difference <span class="math inline">\(f_{S \cup \{i\}}(x_{S \cup \{i\}}) - f_S(x_S)\)</span> is how much adding feature <span class="math inline">\(i\)</span> to the combination <span class="math inline">\(S\)</span> changes the prediction, and the weights average these changes over all combinations. Because every combination is considered, an interaction’s effect is shared between the features involved instead of being credited in full to each, as permutation importance does.</p>
+<p>Of the methods surveyed above, Shapley values are the one every other removal-based and model-specific approach either implements, approximates, or gets compared against — so it’s worth seeing exactly how they’re defined. SHAP <a href="#ref-2">(Lundberg and Lee 2017)</a> brings the Shapley value from cooperative game theory <a href="#ref-29">(Shapley 1953)</a> to feature attribution, and shows that earlier methods such as LIME belong to the same family of additive attributions. <a href="#fig-shapley-sampling" class="quarto-xref">Figure&nbsp;5</a> breaks the formula’s weight down into three steps, using a toy model with <span class="math inline">\(|F|=4\)</span>: feature <span class="math inline">\(i\)</span> plus 3 others.</p>
+<p><strong>Step 1 — count.</strong> Group the <span class="math inline">\(2^3 = 8\)</span> combinations of the other 3 features by size <span class="math inline">\(k = |S|\)</span>. There are <span class="math inline">\(\binom{3}{k}\)</span> combinations of each size: <span class="math inline">\(\binom{3}{0}=1\)</span>, <span class="math inline">\(\binom{3}{1}=3\)</span>, <span class="math inline">\(\binom{3}{2}=3\)</span>, <span class="math inline">\(\binom{3}{3}=1\)</span> — e.g.&nbsp;3 ways to pick 2 of the 3 features, which is why the diagram labels those bands “3 combinations, same weight.”</p>
+<p><strong>Step 2 — weight.</strong> The total weight splits equally across the <span class="math inline">\(|F|=4\)</span> possible sizes, then equally again across the <span class="math inline">\(\binom{|F|-1}{k}\)</span> combinations that share a size: <span class="math inline">\(\frac{1}{|F|}\cdot\frac{1}{\binom{|F|-1}{k}} = \frac{k!\,(|F|-k-1)!}{|F|!}\)</span>. That’s why the lone size-0 and size-3 combinations each keep the whole <span class="math inline">\(1/4\)</span>, while each of the 3 size-1 and each of the 3 size-2 combinations gets <span class="math inline">\(1/12\)</span> — shown directly next to each row.</p>
+<p><strong>Step 3 — mean effect.</strong> Each combination’s weight multiplies its marginal contribution <span class="math inline">\(f_{S \cup \{i\}}(x_{S \cup \{i\}}) - f_S(x_S)\)</span> — the diagram’s right column, how much the prediction changes when <span class="math inline">\(i\)</span> is added to exactly that combination. The weights sum to 1, so this is a weighted mean: sum all 8 weighted terms and the result is <span class="math inline">\(\varphi_i\)</span>, feature <span class="math inline">\(i\)</span>’s average effect across every combination it could be added to. For an input <span class="math inline">\(x\)</span>, that whole picture is the formula</p>
+<p><span class="math display">\[
+\varphi_i(x) = \sum_{S \subseteq F \setminus \{i\}} \frac{|S|!\,(|F| - |S| - 1)!}{|F|!} \big[ f_{S \cup \{i\}}(x_{S \cup \{i\}}) - f_S(x_S) \big]
+\]</span></p>
+<blockquote class="blockquote">
+<p><strong>Notation.</strong> <span class="math inline">\(x\)</span> is the input being explained; <span class="math inline">\(F\)</span> is the set of all features and <span class="math inline">\(|F|\)</span> their number; <span class="math inline">\(S\)</span> is a combination of the other features; <span class="math inline">\(x_S\)</span> are the input’s values for the features in <span class="math inline">\(S\)</span>; <span class="math inline">\(f_S\)</span> is a model that uses only the features in <span class="math inline">\(S\)</span>.</p>
+</blockquote>
+<p>Because every combination is considered, an interaction’s effect is shared between the features involved instead of being credited in full to each, as permutation importance does.</p>
 <p>In the original formulation, <span class="math inline">\(f_S\)</span> is a separate model retrained on just the features in <span class="math inline">\(S\)</span>. Exact computation therefore has two costs that multiply: each feature has <span class="math inline">\(2^{|F|-1}\)</span> combinations, and each combination needs its own retrained model. With hundreds of features, this is computationally intractable.</p>
 <p>SHAP approximates these values without retraining. Instead of training a model without the features outside <span class="math inline">\(S\)</span>, it keeps the one trained model <span class="math inline">\(f\)</span> and integrates those features out, averaging the model’s prediction over the values they could take. The integral has no closed form for a black-box model, so it is estimated numerically, by averaging over sampled values:</p>
 <p><span class="math display">\[
