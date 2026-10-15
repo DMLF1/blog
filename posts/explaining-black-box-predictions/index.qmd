@@ -100,6 +100,8 @@ $$
 
 > **Notation.** $x$ is the input being explained; $F$ is the set of all features and $|F|$ their number; $S$ is a combination of the other features; $x_S$ are the input's values for the features in $S$; $f_S$ is a model that uses only the features in $S$.
 
+![Every one of the 8 subsets of the other features is its own term in the sum below. Subsets of the same size share a weight — the weight is a function of $|S|$ alone — but each specific combination still gets its own marginal-contribution term, since that depends on which features are actually in S. Weighted-sum all 8 terms and the result is $\varphi_i$.](diagrams/shapley_sampling.drawio.svg){#fig-shapley-sampling}
+
 The difference $f_{S \cup \{i\}}(x_{S \cup \{i\}}) - f_S(x_S)$ is how much adding feature $i$ to the combination $S$ changes the prediction, and the weights average these changes over all combinations. Because every combination is considered, an interaction's effect is shared between the features involved instead of being credited in full to each, as permutation importance does.
 
 In the original formulation, $f_S$ is a separate model retrained on just the features in $S$. Exact computation therefore has two costs that multiply: each feature has $2^{|F|-1}$ combinations, and each combination needs its own retrained model. With hundreds of features, this is computationally intractable.
