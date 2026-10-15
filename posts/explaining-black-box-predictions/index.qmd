@@ -236,6 +236,12 @@ This is the conditional choice of $q$ from the previous section, learned instead
 estimate where it's already trustworthy, and fall back to the slow but
 accurate Monte Carlo estimate everywhere else.
 
+::: {.column-page}
+![A per-input, per-feature decision: estimate how trustworthy the fast amortized estimate is, then either use it alone or blend it with the slow Monte Carlo estimate. Only the untrustworthy branch pays any of the Monte Carlo cost.](diagrams/selective_explanations.drawio.svg){#fig-selective}
+:::
+
+@fig-selective shows the decision this formula is making:
+
 $$
 \text{SE}(x, y) \;\triangleq\;
 \begin{cases}
