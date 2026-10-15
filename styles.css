@@ -8,6 +8,18 @@
   width: auto;
 }
 
+/* Center every diagram horizontally, including inside a .column-page /
+   .page-full breakout. Quarto's own centering (text-align: center on the
+   figure's wrapping <p>/<div>) only works for normal inline-flow figures;
+   a .column-page figure's <img> is a grid item (nested page-columns grid),
+   and once width:auto above makes the image narrower than its grid track,
+   the grid's default alignment leaves it flush left instead of centered.
+   justify-self: center fixes that case and is a harmless no-op for
+   ordinary (non-grid) figures, so one rule covers both. */
+.quarto-figure img {
+  justify-self: center;
+}
+
 /* Dark-mode fix for draw.io diagrams: draw.io exports transparent
    backgrounds with dark strokes/text, which vanish on a dark theme. Force a
    light backing plate behind every diagram SVG instead of using a CSS
