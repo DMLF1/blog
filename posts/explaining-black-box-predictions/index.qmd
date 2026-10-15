@@ -272,135 +272,63 @@ mismatch. Amor's surrogate is trained to match the conditional value
 function, but the Monte Carlo estimator typically uses marginal sampling
 by default.
 
-## The multicollinearity problem
 
-Correlated features — our velocity features being the clearest example —
-cause two distinct problems, not one, and it matters which is which.
 
-The first is **estimation bias**, already flagged in the introduction:
-"removing" a feature means sampling a replacement for it from its own
-marginal distribution, independently of every feature that stays. With
-correlated features, that independence assumption is false, so the
-replacement values are combinations that never occur in real data — and
-every Shapley value computed that way inherits the error.
+## The Multicollinearity Problem
 
-The second is **credit instability**: even with a perfectly estimated
-value function, the Shapley averaging process itself *splits* a correlated
-group's joint contribution across its members. Each individual value ends
-up small and close to arbitrary, even though the group clearly matters —
-and no amount of estimation accuracy fixes this, because it's a property
-of how credit gets divided among correlated players, not of how well any
-single number is estimated.
+Correlated features cause two distinct problems. The first is estimation bias, already flagged in the introduction. Classic estimators "remove" a feature by drawing a replacement from its marginal distribution, independently of the features that stay. When features are correlated, this produces combinations that never occur in real data, such as dozens of transactions in the past hour with almost no money spent, or more transactions in the past hour than in the past day. Every Shapley value computed from them inherits the error.
 
-These need different fixes. Conditional Shapley values fix the first
-problem and do nothing for the second. groupShapley fixes the second
-problem directly, and — as a side effect, not by design — also sidesteps
-the first, at least for members of the same group.
+The second is credit dilution. Even if every $f_S$ were computed exactly, Shapley values would split a correlated group's joint contribution among its members. Each member gets only a fraction, so none of them looks important, even though the group as a whole clearly matters. The split itself is fragile: two near-duplicate features, such as transaction counts over the past 30 minutes and the past hour, are interchangeable to the model, so one training run may lean on the first and the next on the second, and the credit moves with it.
 
-### Conditional Shapley values: fix the estimation bias
+These need different fixes. Conditional Shapley values (Aas et al. 2021) fix the first problem but do not fix the second. The groupShapley method (Jullum et al. 2021) fixes the second problem directly and, as a side effect rather than by design, also sidesteps the first, at least for members of the same group.
 
-Removing a feature means evaluating the model with that feature's value
-replaced, and the standard estimators do this by sampling a replacement
-from the feature's **marginal** distribution, independently of every
-feature left in the model:
+## Conditional Shapley values: fix the estimation bias
+
+Every Shapley estimator needs $f_S(x_S)$, the model's prediction when only the features in $S$ are known. Classic estimators draw the missing features from their marginal distribution, independently of the features that remain:
 
 $$
-v_{\text{marg}}(S) = \mathbb{E}_{X_{\bar{S}}}\big[f(x_S, X_{\bar{S}})\big]
+f_S^{\text{marg}}(x_S) = \int f\big(x_S,\, x_{\bar S}\big)\, p\big(x_{\bar S}\big)\, dx_{\bar S}
 $$
 
-That independence assumption is exactly what manufactures the unrealistic
-rows described earlier — a high value for one correlated feature paired
-with a low value for another, a combination that never occurs in real
-data. **Conditional Shapley values** [(Aas et al. 2021)](#ref-5) fix this at the source:
-replace the marginal expectation with the true **conditional**
-distribution of the missing features given the ones that remain,
+With correlated features, this produces combinations that never occur in real data, such as dozens of transactions in the past hour with almost no money spent. The model's predictions on these inputs are extrapolations, and they feed directly into every Shapley value.
+
+Conditional Shapley values (Aas, Jullum and Løland 2021) draw the missing features from their distribution given the features that remain:
 
 $$
-v_{\text{cond}}(S) = \mathbb{E}\big[f(X) \mid X_S = x^*_S\big]
-= \int f(x_S, x_{\bar{S}})\; p(x_{\bar{S}} \mid X_S = x^*_S)\; dx_{\bar{S}}
+f_S^{\text{cond}}(x_S) = \int f\big(x_S,\, x_{\bar S}\big)\, p\big(x_{\bar S} \mid x_S\big)\, dx_{\bar S}
 $$
 
-so that whenever a feature is "removed," its replacement value is drawn
-consistent with whatever the retained features already imply about it,
-rather than treated as if it varies freely.
+> **Notation.** $f_S$, $x_S$ and $\bar S$ are as in the SHAP section; $p(x_{\bar S})$ is the marginal and $p(x_{\bar S} \mid x_S)$ the conditional distribution of the missing features.
 
-Nothing about the Shapley averaging formula itself changes — only how the
-value function $v(S)$ is estimated — so conditional Shapley values keep
-every one of the usual guarantees (additivity, symmetry, the null-player
-property) that the marginal version has. What changes is what "importance"
-means for a correlated feature: a feature that's largely a proxy for
-another one can score lower under the conditional version, since
-conditioning on its correlated partner already explains most of what it
-would otherwise get credit for. The cost is that the conditional
-distribution itself has to be estimated — Monte Carlo sampling, a Gaussian
-or copula model of the dependence structure, or a tree-based conditional
-estimator — which is more work than sampling a marginal distribution, and
-inherits whatever error that dependence model makes.
+Every input the model sees is now one that could occur in real data.
 
-What this doesn't fix: a correlated feature's value can still come out
-small and hard to interpret, even with a perfectly estimated conditional
-distribution. That's the credit-instability problem, and it's untouched
-here — getting $v(S)$ right doesn't change how many ways there are to
-split a correlated group's shared signal among its members.
+The Shapley formula is unchanged: the values still sum to the prediction minus the average prediction, and equal contributions still get equal credit. What changes is what the values measure. Under marginal sampling, a feature the model never uses always gets zero. Under conditional sampling, switching a feature on also brings in information about its correlated partners, so a proxy the model ignores can take part of the credit of the feature it stands in for. The values describe the model together with the data's dependence structure, not the model alone.
 
-### groupShapley: fix the instability (and the bias, for free)
+The price is that the conditional distribution must be estimated, which gets harder as the number of features grows. Common approaches reuse training rows weighted by their similarity to the input, assume a Gaussian or Gaussian-copula dependence structure (Aas, Jullum and Løland 2021), or fit conditional inference trees, which also handle categorical features (Redelmeier, Jullum and Aas 2020). FastSHAP's surrogate (Jethani et al. 2022) instead learns the conditional prediction directly. Whichever method is used, its errors carry into the Shapley values.
 
-**groupShapley** [(Jullum et al. 2021)](#ref-35) takes the opposite approach: instead of
-correcting individual features, compute Shapley values for *groups* of
-features directly, by applying the same game-theoretic formula to groups
-instead of single features:
+Conditional sampling fixes the inputs, not the credit split: a correlated group's contribution is still divided among its members. That is the problem groupShapley addresses.
+
+## groupShapley: fix the credit dilution and the bias
+
+Conditional sampling still divides a correlated group's contribution among its members. groupShapley (Jullum et al. 2021) removes the split by applying the Shapley formula to groups of features instead of single features:
 
 $$
-\varphi_{\mathcal{G}_i} = \sum_{\mathcal{T} \subseteq \mathcal{G} \setminus \mathcal{G}_i}
-\frac{|\mathcal{T}|_g!\,(G - |\mathcal{T}|_g - 1)!}{G!}
-\Big(v(\mathcal{T} \cup \mathcal{G}_i) - v(\mathcal{T})\Big)
+\varphi_{G_i}(x) = \sum_{T \subseteq \mathcal{G} \setminus \{G_i\}} \frac{|T|!\,(K - |T| - 1)!}{K!} \big[ f_{T \cup G_i}(x_{T \cup G_i}) - f_T(x_T) \big]
 $$
 
-where $\mathcal{G} = \{\mathcal{G}_1, \dots, \mathcal{G}_G\}$ is a
-partition of the features into $G$ groups. Because this is still exactly
-the Shapley framework — just applied to groups instead of individual
-features — it keeps every one of the usual guarantees (efficiency,
-symmetry, the null-player property). It's also dramatically cheaper:
-complexity drops from $2^{|F|-1}$ to $2^{G-1}$. With 50 features
-collapsed into 5 groups, that's a reduction factor over $10^{13}$.
+> **Notation.** $\mathcal{G} = \{G_1, \dots, G_K\}$ is a partition of the features into $K$ groups; $T$ is a combination of the other groups and $|T|$ the number of groups in it; $f_T$ is the model's prediction when only the features in the groups of $T$ are known, computed as in the SHAP section.
 
-This fixes the instability directly: a correlated group's joint
-contribution is no longer divided among its members at all, so there's
-nothing left to split unpredictably. It also sidesteps the estimation
-bias from the previous section — but only incidentally, and only within
-a group. Removing a group means including or excluding *all* of its
-members together, so there's never a step where one correlated feature
-is set to some value while its correlated partner is held fixed; the
-"impossible row" problem simply doesn't arise for features that are
-always moved as a unit. What it can't do is tell you which member of the
-group is actually carrying the signal.
+The usual Shapley properties carry over to groups: group values sum to the prediction minus the average prediction, and equal contributions get equal credit. The cost also drops, from $2^{|F|-1}$ combinations per value to $2^{K-1}$: collapsing 50 features into 5 groups cuts the count from about $5.6 \times 10^{14}$ to 16.
 
 ::: {.column-page}
 ![The two responses to a correlated feature group, side by side. Per-feature Shapley splits the joint signal into several small, individually unstable numbers; groupShapley reports one number for the whole group instead.](diagrams/groupshapley.drawio.svg){#fig-groupshapley}
 :::
 
-@fig-groupshapley shows the contrast for our velocity features
-specifically. Groups can be built two ways: by *practical* meaning (e.g.
-all velocity features as one group, all entity-history features as
-another) or by *statistical dependence* (cluster whatever is actually
-correlated, whether or not it shares a name). For our case, the natural
-first cut is the practical one — group the velocity family together — with
-dependence-based grouping as a refinement if any group still turns out to
-mix loosely related features.
+Each group gets one number, so nothing is left to divide among its members (@fig-groupshapley). Grouping also fixes the estimation bias: a group's members are always switched on or off together, so they never appear in combinations that contradict each other. If correlated features share a group, the groups are close to independent, and drawing missing groups from their marginal distribution produces realistic inputs, with no need to model the dependence structure. The price is resolution: groupShapley says how much a group matters, not which member carries the signal.
 
-Conditional Shapley values and groupShapley fix different problems, and
-neither substitutes for the other. groupShapley tells us whether the
-*velocity family as a whole* matters — cheaply, without needing any model
-of the dependence structure, and with the instability resolved — but not
-which window (1h vs. 24h vs. 7d) is carrying that signal. Conditional
-Shapley values don't answer that either: a correlated feature's value can
-still come out small and unstable even with a perfectly estimated
-conditional distribution, since that instability was never an estimation
-problem to begin with. What conditional Shapley values fix is the
-estimation bias itself, which matters with or without any grouping at
-all. In practice: group first to tame the instability; reach for
-conditional Shapley values — on the model as a whole, not as a substitute
-for grouping — when the marginal-sampling bias is the actual concern.
+Groups can be defined by meaning, for example demographic features versus payment history, or by dependence, by clustering correlated features. Groups by meaning are easier to explain; groups by dependence are more likely to keep correlated features together, which is what removes the bias.
+
+The two fixes are complementary: groupShapley resolves credit dilution and, with a good grouping, the bias too; conditional sampling removes the bias without grouping, at the cost of modelling the dependence structure.
 
 ## References
 
