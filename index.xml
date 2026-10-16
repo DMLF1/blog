@@ -331,8 +331,11 @@ Figure&nbsp;7: The two responses to a correlated feature group, side by side. Pe
 </section>
 
  ]]></description>
+  <category>interpretability</category>
+  <category>survey</category>
   <guid>https://dmlf1.github.io/blog/posts/explaining-black-box-predictions/</guid>
   <pubDate>Tue, 13 Oct 2026 00:00:00 GMT</pubDate>
+  <media:content url="https://dmlf1.github.io/blog/posts/explaining-black-box-predictions/preview.png" medium="image" type="image/png" height="76" width="144"/>
 </item>
 </channel>
 </rss>

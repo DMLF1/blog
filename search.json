@@ -72,15 +72,15 @@
   {
     "objectID": "about.html",
     "href": "about.html",
-    "title": "About",
+    "title": "Author: Dmytro I",
     "section": "",
-    "text": "Placeholder about page. Notes on machine learning and data visualization, mostly written to have somewhere to put diagrams and plots that would otherwise rot in a notes folder."
+    "text": "I build fraud detection solutions at Mastercard. My road to machine learning wound through equity valuation, consulting and quantitative finance, in both academia and industry. Today I’m most excited by the frontiers of AI: reinforcement learning, NLP and computer vision. I write here for the fun of it, and to leave a few useful notes for whoever walks the path next.\nIn practice, ML and data science often feel like an art as well as a science, where a good hunch is worth as much as a good method. No method fits every dataset or problem, and finding the right one, then bending it to the task, takes creativity alongside rational judgment. That’s the spirit behind ML Wizardry: rigorous technology, guided by intuition.\nEach post takes the same approach: I lay out the core math that defines a method’s strengths and limits, then bring it to life with visuals that build the intuition behind it."
   },
   {
     "objectID": "index.html",
     "href": "index.html",
     "title": "ML Wizardry",
     "section": "",
-    "text": "Explaining Black-Box Predictions: SHAP and What Comes After\n\n\nA tour of SHAP and its alternatives — and the two problems that make black-box explanation genuinely hard: scale and multicollinearity.\n\n\n\n\n\nOct 13, 2026\n\n32 min\n\n\n\n\nNo matching items"
+    "text": "Explaining Black-Box Predictions: SHAP and What Comes After\n\n\nA tour of SHAP and its alternatives — and the two problems that make black-box explanation genuinely hard: scale and multicollinearity.\n\n\n\ninterpretability\n\nsurvey\n\n\n\n\n\n\nOct 13, 2026\n\n32 min\n\n\n\n\nNo matching items"
   }
 ]
