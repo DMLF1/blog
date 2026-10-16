@@ -36,10 +36,24 @@ body.quarto-dark img[src$=".drawio.svg"] {
   padding: 0.5rem;
 }
 
-/* About page (jolla template): the template centers everything, including
-   the bio paragraphs. Keep the title/links centered as the template
-   intends, but left-align the body text -- a centered paragraph of prose
-   reads worse than ragged-right. */
+/* About page (jolla template): .quarto-about-jolla is a column flexbox
+   with align-items: center, so each child is shrink-to-fit and centered
+   as a box -- not just center-aligned text inside a full-width box. The
+   bio text (#quarto-document-content) already stretches full width, so
+   text-align: left was enough there. The title block
+   (#title-block-header) does not stretch: its <h1> sizes to its own text,
+   so centering it as a flex item puts the whole heading in the middle of
+   the page regardless of text-align. align-self: stretch makes it take
+   the full width like the bio does, so text-align: left then matches it
+   up with the rest of the page's left edge instead of just left-aligning
+   text inside a box that's still floating in the center. */
+.quarto-about-jolla #title-block-header {
+  align-self: stretch;
+  text-align: left;
+}
+.quarto-about-jolla #title-block-header .title {
+  text-align: left;
+}
 .quarto-about-jolla #quarto-document-content {
   text-align: left;
 }
