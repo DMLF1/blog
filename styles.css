@@ -35,3 +35,11 @@ body.quarto-dark img[src$=".drawio.svg"] {
   border-radius: 4px;
   padding: 0.5rem;
 }
+
+/* About page (jolla template): the template centers everything, including
+   the bio paragraphs. Keep the title/links centered as the template
+   intends, but left-align the body text -- a centered paragraph of prose
+   reads worse than ragged-right. */
+.quarto-about-jolla #quarto-document-content {
+  text-align: left;
+}

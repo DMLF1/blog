@@ -1,7 +1,21 @@
 ---
-title: "About"
+title: "Author: Dmytro I"
+about:
+  template: jolla
+  links:
+    - icon: linkedin
+      text: LinkedIn
+      href: https://www.linkedin.com/in/diefremov
+    - icon: github
+      text: GitHub
+      href: https://github.com/DMLF1
+    - icon: envelope
+      text: Email
+      href: mailto:dmitriy.iefremov@gmail.com
 ---
 
-Placeholder about page. Notes on machine learning and data visualization,
-mostly written to have somewhere to put diagrams and plots that would
-otherwise rot in a notes folder.
+I build fraud detection solutions at Mastercard. My road to machine learning wound through equity valuation, consulting and quantitative finance, in both academia and industry. Today I'm most excited by the frontiers of AI: reinforcement learning, NLP and computer vision. I write here for the fun of it, and to leave a few useful notes for whoever walks the path next.
+
+In practice, ML and data science often feel like an art as well as a science, where a good hunch is worth as much as a good method. No method fits every dataset or problem, and finding the right one, then bending it to the task, takes creativity alongside rational judgment. That's the spirit behind ML Wizardry: rigorous technology, guided by intuition.
+
+Each post takes the same approach: I lay out the core math that defines a method's strengths and limits, then bring it to life with visuals that build the intuition behind it.
