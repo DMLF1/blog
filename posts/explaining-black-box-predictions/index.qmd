@@ -2,6 +2,8 @@
 title: "Explaining Black-Box Predictions: SHAP and What Comes After"
 subtitle: "A tour of SHAP and its alternatives — and the two problems that make black-box explanation genuinely hard: scale and multicollinearity."
 date: 2026-10-13
+image: preview.png
+categories: [interpretability, survey]
 bibliography: references.bib
 suppress-bibliography: true
 ---

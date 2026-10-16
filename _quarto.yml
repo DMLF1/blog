@@ -10,6 +10,9 @@ website:
   title: "ML Wizardry"
   description: "A technical blog about machine learning and data visualization."
   site-url: https://dmlf1.github.io/blog/
+  open-graph: true
+  twitter-card:
+    card-style: summary_large_image
   search: true
   page-navigation: true
   navbar:
